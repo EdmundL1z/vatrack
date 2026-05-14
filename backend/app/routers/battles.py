@@ -28,6 +28,29 @@ def map_name(map_id: str | None) -> str:
     return MAP_NAMES.get(map_id, map_id.split("/")[-1])
 
 
+def _match_summary(m: Match) -> dict:
+    return {
+        "match_id": m.match_id,
+        "queue_id": m.queue_id,
+        "map_id": m.map_id,
+        "map_name": map_name(m.map_id),
+        "character_id": m.character_id,
+        "started_at": m.started_at,
+        "duration_seconds": m.duration_seconds,
+        "won_match": m.won_match,
+        "kills": m.kills,
+        "deaths": m.deaths,
+        "assists": m.assists,
+        "acs": m.acs,
+        "is_mvp": m.is_mvp,
+        "is_svp": m.is_svp,
+        "first_kills": m.first_kills,
+        "rr_change": m.rr_change,
+        "tier_before": m.tier_before,
+        "tier_after": m.tier_after,
+    }
+
+
 @router.get("/battles")
 def list_battles(
     queue: str | None = None,
