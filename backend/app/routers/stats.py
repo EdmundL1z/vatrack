@@ -29,7 +29,7 @@ def agent_stats(db: Session = Depends(get_db)):
         {
             "character_id": r.character_id,
             "played": r.played,
-            "wins": r.wins or 0,
+            "wins": int(r.wins or 0),
             "win_rate": round((r.wins or 0) / r.played * 100, 1),
             "avg_kills": round(r.avg_kills or 0, 1),
             "avg_deaths": round(r.avg_deaths or 0, 1),
@@ -61,7 +61,7 @@ def map_stats(db: Session = Depends(get_db)):
             "map_id": r.map_id,
             "map_name": map_name(r.map_id),
             "played": r.played,
-            "wins": r.wins or 0,
+            "wins": int(r.wins or 0),
             "win_rate": round((r.wins or 0) / r.played * 100, 1),
             "avg_kills": round(r.avg_kills or 0, 1),
             "avg_deaths": round(r.avg_deaths or 0, 1),
