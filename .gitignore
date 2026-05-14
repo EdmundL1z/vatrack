@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+vatrack.db
+data/
+node_modules/
+cookie-extractor/sync.log
+cookie-extractor/extension/
+dist/
+.DS_Store

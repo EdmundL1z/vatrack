@@ -1,0 +1,12 @@
+{
+  "name": "vatrack-cookie-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "sync": "node scripts/sync_cookies.js"
+  },
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.2",
+    "node-fetch": "^3.3.2"
+  }
+}
