@@ -21,6 +21,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(sync.router, prefix="/api")
 app.include_router(battles.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
-app.include_router(sync.router, prefix="/api")
