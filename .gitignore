@@ -10,3 +10,4 @@ cookie-extractor/sync.log
 cookie-extractor/extension/
 dist/
 .DS_Store
+.superpowers/
