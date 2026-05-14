@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getBattle, MatchDetail, Player } from '../api/client';
+import { getBattle } from '../api/client';
+import type { MatchDetail, Player } from '../api/client';
 
 const QUEUE_NAMES: Record<string, string> = {
   competitive: '竞技',
