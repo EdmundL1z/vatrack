@@ -61,9 +61,10 @@ export default function TrendStats() {
               <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
               <Tooltip
                 contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 12 }}
-                formatter={(value: number, name: string) =>
-                  name === 'cumRR' ? [`${value}`, '累计RR'] : [`${value > 0 ? '+' : ''}${value}`, '本场RR']
-                }
+                formatter={(value, name) => {
+                  if (typeof value !== 'number') return '';
+                  return name === 'cumRR' ? [`${value}`, '累计RR'] : [`${value > 0 ? '+' : ''}${value}`, '本场RR'];
+                }}
               />
               <ReferenceLine y={0} stroke="var(--border)" />
               <Line
