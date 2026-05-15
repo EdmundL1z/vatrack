@@ -67,3 +67,45 @@ export const getBattles = (limit = 50) =>
 
 export const getBattle = (id: string) =>
   client.get<MatchDetail>(`/battles/${id}`);
+
+export interface AgentStat {
+  character_id: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+  kd_ratio: number;
+}
+
+export interface MapStat {
+  map_id: string;
+  map_name: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+}
+
+export interface TrendMatch {
+  match_id: string;
+  started_at: number;
+  map_name: string;
+  won_match: boolean;
+  kills: number;
+  deaths: number;
+  rr_change: number | null;
+  tier_after: number | null;
+}
+
+export const getAgentStats = () =>
+  client.get<AgentStat[]>('/stats/agents');
+
+export const getMapStats = () =>
+  client.get<MapStat[]>('/stats/maps');
+
+export const getTrendStats = (days = 30) =>
+  client.get<TrendMatch[]>('/stats/trends', { params: { days } });
