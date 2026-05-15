@@ -50,7 +50,12 @@ if [[ -f frontend/package-lock.json ]]; then
 fi
 
 echo "Restarting $SERVICE..."
-systemctl restart "$SERVICE"
-systemctl --no-pager --full status "$SERVICE" | sed -n '1,18p'
+if [[ "${EUID}" -eq 0 ]]; then
+  systemctl restart "$SERVICE"
+  systemctl --no-pager --full status "$SERVICE" | sed -n '1,18p'
+else
+  sudo -n /bin/systemctl restart "$SERVICE"
+  sudo -n /bin/systemctl --no-pager --full status "$SERVICE" | sed -n '1,18p'
+fi
 
 echo "Deploy complete. Commit: $(git rev-parse --short HEAD)"
