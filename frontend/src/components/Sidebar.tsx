@@ -1,8 +1,18 @@
+type Page = 'list' | 'detail' | 'agents' | 'maps' | 'trends';
+
 interface SidebarProps {
-  onNavigate: () => void;
+  page: Page;
+  onNavigate: (page: Page) => void;
 }
 
-export default function Sidebar({ onNavigate }: SidebarProps) {
+const NAV: { label: string; icon: string; page: Page }[] = [
+  { label: '对局记录', icon: '▤', page: 'list' },
+  { label: '英雄统计', icon: '◎', page: 'agents' },
+  { label: '地图统计', icon: '◈', page: 'maps' },
+  { label: 'RR 趋势',  icon: '◉', page: 'trends' },
+];
+
+export default function Sidebar({ page, onNavigate }: SidebarProps) {
   return (
     <aside style={{
       width: 130,
@@ -24,35 +34,24 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
       }}>
         VATRACK
       </div>
-      <button
-        onClick={onNavigate}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--accent)',
-          textAlign: 'left',
-          padding: '6px 8px',
-          borderRadius: 4,
-          fontSize: 13,
-        }}
-      >
-        ▤ 对局记录
-      </button>
-      <button
-        disabled
-        style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--muted)',
-          textAlign: 'left',
-          padding: '6px 8px',
-          borderRadius: 4,
-          fontSize: 13,
-          cursor: 'not-allowed',
-        }}
-      >
-        ◎ 英雄统计
-      </button>
+      {NAV.map(({ label, icon, page: p }) => (
+        <button
+          key={p}
+          onClick={() => onNavigate(p)}
+          style={{
+            background: page === p ? 'var(--border)' : 'none',
+            border: 'none',
+            color: page === p ? 'var(--accent)' : 'var(--muted)',
+            textAlign: 'left',
+            padding: '6px 8px',
+            borderRadius: 4,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          {icon} {label}
+        </button>
+      ))}
     </aside>
   );
 }
