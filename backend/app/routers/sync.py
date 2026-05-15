@@ -39,10 +39,14 @@ def sync_matches(
     if SYNC_TOKEN and x_sync_token != SYNC_TOKEN:
         raise HTTPException(status_code=403, detail="Invalid sync token")
 
-    inserted = skipped = 0
+    inserted = skipped = detail_filled = 0
     for item in payload.matches:
         if db.get(Match, item.match_id):
-            skipped += 1
+            if item.detail_data and not db.get(MatchDetail, item.match_id):
+                db.add(MatchDetail(match_id=item.match_id, raw_json=json.dumps(item.detail_data)))
+                detail_filled += 1
+            else:
+                skipped += 1
             continue
         db.add(_parse_match(item))
         if item.detail_data:
@@ -50,7 +54,7 @@ def sync_matches(
         inserted += 1
 
     db.commit()
-    return {"inserted": inserted, "skipped": skipped}
+    return {"inserted": inserted, "skipped": skipped, "detail_filled": detail_filled}
 
 
 def _parse_match(item: MatchPayload) -> Match:

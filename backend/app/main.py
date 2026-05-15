@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app import models
 from app.database import engine
-from app.routers import battles, stats, sync
+from app.routers import auth, battles, stats, sync
 
 
 @asynccontextmanager
@@ -24,3 +24,4 @@ app.add_middleware(
 app.include_router(sync.router, prefix="/api")
 app.include_router(battles.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")

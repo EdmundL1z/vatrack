@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "VaTrack Collector",
+  "version": "1.0",
+  "description": "Sync WeGame Valorant matches to VaTrack server",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://www.wegame.com.cn/*",
+    "http://64.90.21.168/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": []
+}
