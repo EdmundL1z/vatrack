@@ -11,19 +11,18 @@
 ## 2. 系统架构
 
 ```
-本地 Windows 机器                    HK Linux 服务器
-┌─────────────────────┐              ┌─────────────────────────┐
-│ Chrome (调试模式)    │              │                         │
-│ WeGame 已登录        │   Cookie     │   Python FastAPI        │
-│         ↓           │ ──────────→  │         ↓               │
-│ Node.js CDP脚本      │   同步       │   SQLite (SQLAlchemy)   │
-│ 提取 HttpOnly Cookie │              │         ↓               │
-└─────────────────────┘              │   定时任务 (每小时)      │
-                                     │   拉取 WeGame API        │
-                                     │         ↓               │
-                                     │   Web 仪表盘前端         │
-                                     └─────────────────────────┘
+本地 Windows 机器                         HK Linux 服务器
+┌──────────────────────────────┐          ┌──────────────────────────┐
+│ Chrome                       │          │                          │
+│ WeGame 已登录                 │          │   Python FastAPI         │
+│         ↓                    │          │         ↓                │
+│ VaTrack Collector 扩展        │  对局数据 │   SQLite (SQLAlchemy)   │
+│ 直接调用 WeGame API           │ ───────→ │                          │
+│ (用浏览器 Cookie 认证)        │  /api/sync│   Web 仪表盘前端         │
+└──────────────────────────────┘          └──────────────────────────┘
 ```
+
+**备选方案（代码保留，未激活）：** Node.js CDP 脚本提取 HttpOnly Cookie → 推送到服务器 → 服务器定时拉取 WeGame API。
 
 ---
 
@@ -35,7 +34,7 @@
 
 **认证机制：** HttpOnly Cookie（浏览器自动携带，JS 不可读取）
 
-**接入方式：** Chrome DevTools Protocol (CDP) — 在 WeGame 页面 JS 上下文中执行 `fetch`，借用已有登录态
+**接入方式：** Chrome 扩展 content script 注入到 WeGame 页面，直接以 `credentials: "include"` 发起 `fetch`，借用已有登录态。无需提取 Cookie，无需 CDP。
 
 ### 3.2 可用接口
 
@@ -86,47 +85,39 @@ apEventId（用于请求详情）
 |------|---------|------|
 | 后端 | Python + FastAPI | AI 生成质量高，方便后续数据分析扩展 |
 | 数据库 | SQLite + SQLAlchemy ORM | 单用户/小团队足够，迁移 PostgreSQL 只改一行连接字符串 |
-| Cookie 抓取 | Node.js + chrome-remote-interface | 已验证可用，CDP 协议可读取 HttpOnly Cookie |
-| 前端 | 待定（React / Vue 均可）| AI 生成为主 |
+| 数据同步 | Chrome 扩展（MV3）| 利用浏览器已有登录态，无需提取 Cookie，实现最简单 |
+| 前端 | React + TypeScript + Vite | AI 生成为主 |
 
 ---
 
-## 5. Cookie 同步方案
+## 5. 数据同步方案
 
-**问题：** WeGame 使用 HttpOnly Cookie 认证，服务器无法直接登录，需从本地 Chrome 提取。
+**核心思路：** 不提取 Cookie，直接用浏览器登录态。
 
-**方案：**
+**流程：**
 
-1. 本地 Node.js 脚本通过 CDP `Network.getCookies()` 提取 WeGame 域名下的全部 Cookie
-2. 通过 HTTPS 推送到服务器存储
-3. 服务器发起 API 请求时携带这些 Cookie
+1. 用户在 Chrome 中打开 `https://www.wegame.com.cn`（保持登录状态）
+2. 点击 VaTrack Collector 扩展图标
+3. 扩展调用 `GET /api/battles/ids` 获取服务器已有的全部 matchId
+4. content script 在 WeGame 页面上下文中调用 `GetBattleList(size=100)`，再逐条调用 `GetBattleDetail`
+5. 将新对局数据 POST 到 `POST /api/sync`，后端去重后写入 SQLite
 
-**同步触发机制（双保险）：**
+**触发方式：** 手动点击扩展按钮（按需同步）。
 
-- Windows 计划任务每周自动运行一次同步脚本（覆盖日常情况）
-- Cookie 失效时服务器 API 请求返回未授权，仪表盘顶部显示红色警告提示用户手动执行同步
-
-**本地 Chrome 启动方式：**
-
-```powershell
-chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\Users\...\Chrome\User Data"
-```
+**备选方案（代码已备，未激活）：** `cookie-extractor/scripts/sync_cookies.js` 通过 CDP 提取 Cookie 推送到服务器，配合后端定时任务自动拉取。若需要自动化同步可启用此路径。
 
 ---
 
 ## 6. 数据拉取策略
 
-**频率：** 每小时一次（保守策略，避免触发限流/封禁）
+**当前方案（扩展手动同步）：**
+- 每次同步拉取最近 100 场（`GetBattleList size=100`）
+- 与服务器已有 matchId 对比，仅对新对局调用 `GetBattleDetail`
+- 以 `matchId` 为唯一键去重写入
 
-**首次运行（全量初始化）：**
-- 以尽可能大的 `size` 参数调用 `GetBattleList` 拉取全部历史
-- 对每场调用 `GetBattleDetail` 获取完整数据
-- `size` 上限待开发时测试确认
+**全量历史导入：** 首次使用时手动点击同步即可，size=100 覆盖绝大多数情况。如需更多历史，可调大 content.js 中的 size 参数。
 
-**后续增量更新：**
-- 每小时拉取最近 20 场
-- 以 `matchId` 为唯一键去重，仅插入新对局
-- 新对局自动触发 `GetBattleDetail` 拉取详情
+**自动化方向（未来可选）：** 启用 `scripts/sync_cookies.js` + 后端定时任务（`services/sync.py` 已有框架，逻辑待实现），可实现每小时无人值守拉取。
 
 ---
 
@@ -186,8 +177,7 @@ chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\Users\...\Chrome\Use
 
 | 项目 | 说明 |
 |------|------|
-| `GetBattleList` size 上限 | 开发时测试最大可拉取场次数 |
-| Cookie 有效期 | 实际使用中观察，决定计划任务频率是否需要调整 |
+| `GetBattleList` size 上限 | 当前设为 100，实测可用；更大值待验证 |
 
 ---
 

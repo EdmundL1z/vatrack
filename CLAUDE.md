@@ -8,7 +8,7 @@ Personal Valorant match tracking dashboard for WeGame CN users. Deployed on a Ho
 
 ## Development Workflow
 
-Local Windows development → `git push` → HK Linux server deployment. The cookie extraction script runs **only locally** and is never deployed to the server.
+Local Windows development → `git push` → HK Linux server deployment. All local tools (extension, cookie extractor) are never deployed to the server.
 
 Environment config lives in `.env` (gitignored). Maintain separate `.env.local` and `.env.production` templates as `.env.example`.
 
@@ -29,12 +29,12 @@ pytest tests/test_battles.py -v
 pytest
 ```
 
-### Cookie Extractor (Node.js, local only)
+### Cookie Extractor (Node.js, local only — alternative to extension)
 ```bash
 # Install deps
 npm install
 
-# Extract and push cookies to server
+# Extract cookies via CDP and push to server
 node scripts/sync_cookies.js
 ```
 
@@ -49,8 +49,14 @@ git pull && systemctl restart vatrack
 ### Component Map
 
 ```
-cookie-extractor/          # Node.js, local-only, never deployed
-  sync_cookies.js          # CDP → extract WeGame cookies → POST to server
+cookie-extractor/
+  extension/               # Chrome extension — primary match sync method
+    manifest.json          # MV3, host_permissions for wegame.com.cn + server IP
+    content.js             # Injected into WeGame tab; calls GetBattleList/GetBattleDetail
+    popup.js               # UI: fetches existing IDs from server, triggers content.js, pushes data
+    popup.html
+  scripts/
+    sync_cookies.js        # Alternative: Node.js CDP → extract WeGame cookies → POST /api/cookies
 
 backend/
   app/
@@ -60,46 +66,53 @@ backend/
     routers/
       battles.py           # GET /battles, GET /battles/{id}
       stats.py             # GET /stats/agents, /stats/maps, etc.
-      auth.py              # POST /cookies (receive from local extractor)
+      sync.py              # GET /battles/ids, POST /sync (receives match data from extension)
+      auth.py              # POST /cookies (receives cookies from CDP script — alternative path)
     services/
-      wegame.py            # WeGame API client (all fetch logic here)
-      sync.py              # Scheduled hourly pull logic
-    scheduler.py           # APScheduler hourly job
+      wegame.py            # WeGame API client (used if server-side pull is ever needed)
+      sync.py              # Scheduled hourly pull logic (TODO — not yet implemented)
+    scheduler.py           # APScheduler hourly job (wired up, sync logic is TODO)
 
-frontend/                  # React or Vue, TBD
+frontend/
+  src/
+    pages/                 # BattleList, BattleDetail, AgentStats, MapStats, TrendStats
+    components/            # Sidebar, BattleCard, etc.
+    api/client.ts          # Axios client + typed API functions
 ```
 
 ### Data Flow
 
-1. **Cookie sync**: Local Node.js reads Chrome cookies via CDP (`Network.getCookies`), POSTs to `/api/cookies` on server. Triggered by Windows Task Scheduler weekly, or manually when dashboard shows auth warning.
+**Primary (Chrome extension):**
+1. User opens WeGame tab in Chrome and clicks the VaTrack Collector extension popup.
+2. Extension calls `GET /api/battles/ids` to get all match IDs already on the server.
+3. Content script calls `GetBattleList(size=100)` on WeGame, then `GetBattleDetail` for each new match.
+4. Extension POSTs all new matches to `POST /api/sync` with the sync token.
+5. Backend deduplicates by `matchId` and persists to SQLite.
 
-2. **Match ingestion**: APScheduler runs every hour → `sync.py` calls `GetBattleList(size=20)` → deduplicates by `matchId` → fetches `GetBattleDetail` for new matches only.
-
-3. **Full history init**: One-time on first run, calls `GetBattleList` with max `size` → fetches all details. Size ceiling TBD (test during dev).
+**Alternative (CDP cookie sync + server-side pull — not currently active):**
+1. `scripts/sync_cookies.js` reads Chrome cookies via CDP, POSTs to `/api/cookies`.
+2. Stored cookies would allow the backend scheduler to call WeGame API server-side.
+3. This path exists in code (`auth.py`, `services/wegame.py`, `scheduler.py`) but the scheduled pull logic in `services/sync.py` is not yet implemented.
 
 ### WeGame API
 
 Base URL: `https://www.wegame.com.cn/api/v1/wegame.pallas.game.ValBattle/`
 
-All endpoints are **HTTP POST with JSON body**, authenticated via HttpOnly cookies (passed as `Cookie` header server-side).
+All endpoints are **HTTP POST with JSON body**. The extension calls them from the browser using `credentials: "include"` (browser cookies). The CDP path would pass cookies via `Cookie` header server-side.
 
 | Endpoint | Key param | Note |
 |----------|-----------|------|
-| `GetBattleList` | `size: N` | Returns last N matches |
+| `GetBattleList` | `size: N` | Returns last N matches; extension uses size=100 |
 | `GetBattleDetail` | `apEventId` | **Use `apEventId`, not `matchId`** |
 | `GetBattleReport` | `sid, queueID` | Season summary |
 | `GetChampion` | — | All-agent historical stats |
 
 `GetBattleDetail` returns full 10-player data including headshot counts, KAST, economy score, clutch count, etc.
 
-### Cookie Auth State Machine
-
-Server tracks cookie validity. If a WeGame API call returns 401/unauthorized, the server sets a flag. The frontend polls this flag and renders a red banner prompting the user to re-run the local sync script.
-
 ## Key Domain Notes
 
 - `apEventId` ≠ `matchId` — always use `apEventId` to fetch match details.
 - Dedup key in DB is `matchId` (from list response), but detail fetch uses `apEventId`.
 - RR change field: `CompetitiveTierRankedRatingEarned` (long name, from list response).
-- Cookie source: Chrome must be launched with `--remote-debugging-port=9222 --user-data-dir=<actual profile path>` for CDP to work.
+- `character_id` values are standard Valorant UUIDs (e.g. `dade69b4-...`), not asset paths.
 - Ranked-only fields (tier, RR) are absent for unranked queue matches — handle nulls.
