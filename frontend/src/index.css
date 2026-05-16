@@ -1,27 +1,42 @@
 :root {
-  --bg:       #0f1923;
-  --surface:  #131f2e;
-  --sidebar:  #111c27;
-  --border:   #1e2d3d;
-  --accent:   #ff4655;
-  --win:      #5cb85c;
-  --loss:     #d9534f;
-  --text:     #ffffff;
-  --muted:    #4a5568;
-  --subtext:  #8b9db0;
+  --bg:         #070b10;
+  --surface:    #0c1520;
+  --surface-hi: #111d2c;
+  --sidebar:    #060a10;
+  --border:     #192840;
+  --accent:     #ff4655;
+  --win:        #00d4a0;
+  --loss:       #ff4655;
+  --text:       #dde6f0;
+  --subtext:    #7a96b0;
+  --muted:      #3a5068;
+  --gold:       #f0c040;
+  --font-ui:    'Rajdhani', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  --font-mono:  'IBM Plex Mono', 'Consolas', monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, rgba(25, 40, 64, 0.65) 1px, transparent 1px);
+  background-size: 28px 28px;
   color: var(--text);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   min-height: 100vh;
 }
 
 button { cursor: pointer; font: inherit; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+.battle-card { transition: background 0.1s; }
+.battle-card:hover { background: var(--surface-hi) !important; }
+.stat-row:hover { background: rgba(255,255,255,0.022) !important; }
 
 [data-tip] { position: relative; }
 [data-tip]:hover::after {
@@ -30,12 +45,13 @@ button { cursor: pointer; font: inherit; }
   bottom: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface);
+  background: var(--surface-hi);
   border: 1px solid var(--border);
   color: var(--subtext);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 11px;
+  font-family: var(--font-mono);
   white-space: nowrap;
   z-index: 100;
   pointer-events: none;

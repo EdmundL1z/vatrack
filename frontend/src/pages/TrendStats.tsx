@@ -8,12 +8,8 @@ import { getTrendStats } from '../api/client';
 import type { TrendMatch } from '../api/client';
 import { useGameData } from '../hooks/useGameData';
 
-// Update when your rank changes significantly or a new season resets RR.
-// Check your actual tier ID: curl http://localhost:8000/api/stats/trends?days=7 | grep tier_after
-// Then find it in TIER_NAMES below and set RR_ANCHOR.tier to that ID.
 const RR_ANCHOR = { tier: 16, rr: 6 };
 
-// Valorant tier ID → Chinese name. Verify tier IDs against actual DB values.
 const TIER_NAMES: Record<number, string> = {
   0: '无级',
   3: '铁牌1', 4: '铁牌2', 5: '铁牌3',
@@ -27,7 +23,7 @@ const TIER_NAMES: Record<number, string> = {
   27: '辉耀',
 };
 
-const ALL_DAYS = 3650; // ~10 years; backend cap is 36500
+const ALL_DAYS = 3650;
 
 type DayRange = 7 | 30 | 0;
 
@@ -36,52 +32,31 @@ function formatDate(ts: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-interface RRPoint {
-  date: string;
-  absRR: number;
-  rrChange: number;
-}
+interface RRPoint { date: string; absRR: number; rrChange: number; }
 
 function buildRRData(matches: TrendMatch[]): RRPoint[] {
   const competitive = matches.filter(m => m.rr_change !== null && m.tier_after !== null);
   if (competitive.length === 0) return [];
-
   const points: RRPoint[] = new Array(competitive.length);
   let currentAbsRR = RR_ANCHOR.tier * 100 + RR_ANCHOR.rr;
-
   for (let i = competitive.length - 1; i >= 0; i--) {
     const m = competitive[i];
-    points[i] = {
-      date: formatDate(m.started_at),
-      absRR: currentAbsRR,
-      rrChange: m.rr_change!,
-    };
+    points[i] = { date: formatDate(m.started_at), absRR: currentAbsRR, rrChange: m.rr_change! };
     currentAbsRR = currentAbsRR - m.rr_change!;
   }
   return points;
 }
 
-interface KDAPoint {
-  date: string;
-  kills: number;
-  deaths: number;
-  assists: number;
-}
+interface KDAPoint { date: string; kills: number; deaths: number; assists: number; }
 
 function buildKDAData(matches: TrendMatch[]): KDAPoint[] {
   return matches.map(m => ({
     date: formatDate(m.started_at),
-    kills: m.kills,
-    deaths: m.deaths,
-    assists: m.assists,
+    kills: m.kills, deaths: m.deaths, assists: m.assists,
   }));
 }
 
-interface AgentBar {
-  name: string;
-  wins: number;
-  losses: number;
-}
+interface AgentBar { name: string; wins: number; losses: number; }
 
 function buildAgentData(matches: TrendMatch[], agentNameFn: (uuid: string) => string): AgentBar[] {
   const map = new Map<string, { wins: number; losses: number }>();
@@ -96,21 +71,39 @@ function buildAgentData(matches: TrendMatch[], agentNameFn: (uuid: string) => st
     .sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
 }
 
+const chartTooltip: CSSProperties = {
+  background: '#0c1520', border: '1px solid #192840',
+  fontSize: 11, borderRadius: 2,
+};
+
 const btnStyle = (active: boolean): CSSProperties => ({
-  background: active ? 'var(--accent)' : 'var(--surface)',
-  border: '1px solid var(--border)',
-  color: 'var(--text)',
-  borderRadius: 4,
+  background: active ? 'rgba(255,70,85,0.15)' : 'transparent',
+  border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+  color: active ? 'var(--text)' : 'var(--muted)',
+  borderRadius: 2,
   padding: '4px 12px',
   cursor: 'pointer',
   fontSize: 12,
+  fontFamily: 'var(--font-ui)',
+  letterSpacing: '0.04em',
+  boxShadow: active ? '0 0 8px rgba(255,70,85,0.2)' : 'none',
 });
 
 const chartCard: CSSProperties = {
   background: 'var(--surface)',
-  borderRadius: 6,
+  borderRadius: 2,
+  border: '1px solid var(--border)',
   padding: '16px 8px',
-  marginBottom: 16,
+  marginBottom: 12,
+};
+
+const sectionLabel: CSSProperties = {
+  color: 'var(--muted)',
+  fontSize: 10,
+  letterSpacing: '0.12em',
+  marginBottom: 12,
+  paddingLeft: 8,
+  textTransform: 'uppercase' as const,
 };
 
 export default function TrendStats() {
@@ -129,7 +122,7 @@ export default function TrendStats() {
       .finally(() => setLoading(false));
   }, [days]);
 
-  if (loading) return <p style={{ color: 'var(--muted)' }}>加载中...</p>;
+  if (loading) return <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>;
   if (error)   return <p style={{ color: 'var(--loss)' }}>{error}</p>;
   if (allMatches.length === 0) return <p style={{ color: 'var(--muted)' }}>暂无竞技数据</p>;
 
@@ -137,10 +130,12 @@ export default function TrendStats() {
   const kdaData   = buildKDAData(allMatches);
   const agentData = buildAgentData(allMatches, agentName);
 
+  const axisTick = { fill: '#3a5068', fontSize: 10, fontFamily: 'IBM Plex Mono, monospace' };
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 'bold', margin: 0 }}>趋势统计</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.08em' }}>趋势统计</h2>
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           {([7, 30, 0] as DayRange[]).map(d => (
             <button key={d} onClick={() => setDays(d)} style={btnStyle(days === d)}>
@@ -150,20 +145,19 @@ export default function TrendStats() {
         </div>
       </div>
 
-      {/* Chart 1: RR Trend */}
       <div style={chartCard}>
-        <div style={{ color: 'var(--muted)', fontSize: 11, marginBottom: 8, paddingLeft: 8 }}>段位走势</div>
+        <div style={sectionLabel}>段位走势</div>
         {rrData.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={rrData}>
-              <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
+              <XAxis dataKey="date" tick={axisTick} />
               <YAxis
-                tick={{ fill: 'var(--muted)', fontSize: 10 }}
+                tick={axisTick}
                 tickFormatter={(v: number) => TIER_NAMES[Math.floor(v / 100)] ?? `${v}`}
                 width={52}
               />
               <Tooltip
-                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }}
+                contentStyle={chartTooltip}
                 wrapperStyle={{ transform: 'translateY(-110%)' }}
                 formatter={(value) => {
                   if (typeof value !== 'number') return ['—', '段位'] as [string, string];
@@ -183,52 +177,47 @@ export default function TrendStats() {
         )}
       </div>
 
-      {/* Chart 2: KDA Trend */}
       <div style={chartCard}>
-        <div style={{ color: 'var(--muted)', fontSize: 11, marginBottom: 8, paddingLeft: 8 }}>KDA 趋势</div>
+        <div style={sectionLabel}>KDA 趋势</div>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={kdaData}>
-            <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-            <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} wrapperStyle={{ transform: 'translateY(-110%)' }} />
-            <Legend wrapperStyle={{ fontSize: 11, color: 'var(--muted)' }} />
-            <Line type="monotone" dataKey="kills"   stroke="#5bc0eb" dot={false} strokeWidth={2} isAnimationActive={false} name="击杀" />
+            <XAxis dataKey="date" tick={axisTick} />
+            <YAxis tick={axisTick} />
+            <Tooltip contentStyle={chartTooltip} wrapperStyle={{ transform: 'translateY(-110%)' }} />
+            <Legend wrapperStyle={{ fontSize: 11, color: '#3a5068' }} />
+            <Line type="monotone" dataKey="kills"   stroke="#00d4a0" dot={false} strokeWidth={2} isAnimationActive={false} name="击杀" />
             <Line type="monotone" dataKey="deaths"  stroke="#ff4655" dot={false} strokeWidth={2} isAnimationActive={false} name="死亡" />
-            <Line type="monotone" dataKey="assists" stroke="#4caf50" dot={false} strokeWidth={2} isAnimationActive={false} name="助攻" />
+            <Line type="monotone" dataKey="assists" stroke="#7a96b0" dot={false} strokeWidth={2} isAnimationActive={false} name="助攻" />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Chart 3: Agent Distribution */}
       {agentData.length > 0 && (
         <div style={chartCard}>
-          <div style={{ color: 'var(--muted)', fontSize: 11, marginBottom: 8, paddingLeft: 8 }}>英雄使用分布</div>
+          <div style={sectionLabel}>英雄使用分布</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={agentData}>
-              <XAxis dataKey="name" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-              <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} wrapperStyle={{ transform: 'translateY(-110%)' }} />
-              <Bar dataKey="wins"   name="胜" stackId="a" fill="var(--win)"  isAnimationActive={false} />
-              <Bar dataKey="losses" name="负" stackId="a" fill="var(--loss)" isAnimationActive={false} />
+              <XAxis dataKey="name" tick={axisTick} />
+              <YAxis tick={axisTick} />
+              <Tooltip contentStyle={chartTooltip} wrapperStyle={{ transform: 'translateY(-110%)' }} />
+              <Bar dataKey="wins"   name="胜" stackId="a" fill="#00d4a0" isAnimationActive={false} />
+              <Bar dataKey="losses" name="负" stackId="a" fill="#ff4655" isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* Chart 4: Win/Loss Streak */}
       <div style={chartCard}>
-        <div style={{ color: 'var(--muted)', fontSize: 11, marginBottom: 8, paddingLeft: 8 }}>胜负连续（旧→新）</div>
+        <div style={sectionLabel}>胜负连续（旧→新）</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, padding: '0 8px' }}>
           {allMatches.map(m => (
             <div
               key={m.match_id}
               data-tip={`${mapName(m.map_name)} ${m.kills}/${m.deaths}/${m.assists}`}
               style={{
-                width: 14,
-                height: 14,
-                borderRadius: 2,
-                background: m.won_match ? 'var(--win)' : 'var(--loss)',
-                opacity: 0.85,
+                width: 14, height: 14, borderRadius: 1,
+                background: m.won_match ? '#00d4a0' : '#ff4655',
+                opacity: 0.8,
                 cursor: 'default',
               }}
             />

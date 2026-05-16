@@ -18,7 +18,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar page={page} onNavigate={setPage} />
-      <main style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
         {page === 'list'   && <BattleList onSelectMatch={goToDetail} />}
         {page === 'detail' && matchId && <BattleDetail matchId={matchId} onBack={goToList} />}
         {page === 'agents' && <AgentStats />}
