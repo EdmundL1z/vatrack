@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -75,7 +77,6 @@ def map_stats(db: Session = Depends(get_db)):
 
 @router.get("/stats/trends")
 def trend_stats(days: int = Query(30, ge=1, le=36500), db: Session = Depends(get_db)):
-    import time
     cutoff = int(time.time()) - days * 86400
     rows = (
         db.query(Match)

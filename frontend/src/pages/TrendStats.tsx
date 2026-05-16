@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { getTrendStats } from '../api/client';
@@ -8,7 +9,8 @@ import type { TrendMatch } from '../api/client';
 import { useGameData } from '../hooks/useGameData';
 
 // Update when your rank changes significantly or a new season resets RR.
-// Platinum 2 = tier 14 in Valorant's system (verify against your DB's tier_after values).
+// Check your actual tier ID: curl http://localhost:8000/api/stats/trends?days=7 | grep tier_after
+// Then find it in TIER_NAMES below and set RR_ANCHOR.tier to that ID.
 const RR_ANCHOR = { tier: 14, rr: 6 };
 
 // Valorant tier ID → Chinese name. Verify tier IDs against actual DB values.
@@ -25,6 +27,8 @@ const TIER_NAMES: Record<number, string> = {
   27: '辉耀',
 };
 
+const ALL_DAYS = 3650; // ~10 years; backend cap is 36500
+
 type DayRange = 7 | 30 | 0;
 
 function formatDate(ts: number): string {
@@ -35,9 +39,7 @@ function formatDate(ts: number): string {
 interface RRPoint {
   date: string;
   absRR: number;
-  tierLabel: string;
   rrChange: number;
-  matchId: string;
 }
 
 function buildRRData(matches: TrendMatch[]): RRPoint[] {
@@ -49,13 +51,10 @@ function buildRRData(matches: TrendMatch[]): RRPoint[] {
 
   for (let i = competitive.length - 1; i >= 0; i--) {
     const m = competitive[i];
-    const tier = m.tier_after!;
     points[i] = {
       date: formatDate(m.started_at),
       absRR: currentAbsRR,
-      tierLabel: TIER_NAMES[tier] ?? `段位${tier}`,
       rrChange: m.rr_change!,
-      matchId: m.match_id,
     };
     currentAbsRR = currentAbsRR - m.rr_change!;
   }
@@ -106,7 +105,8 @@ export default function TrendStats() {
 
   useEffect(() => {
     setLoading(true);
-    getTrendStats(days === 0 ? 3650 : days)
+    setError(null);
+    getTrendStats(days === 0 ? ALL_DAYS : days)
       .then(r => setAllMatches(r.data))
       .catch(() => setError('加载失败'))
       .finally(() => setLoading(false));
@@ -120,7 +120,7 @@ export default function TrendStats() {
   const kdaData   = buildKDAData(allMatches);
   const agentData = buildAgentData(allMatches, agentName);
 
-  const btnStyle = (active: boolean): React.CSSProperties => ({
+  const btnStyle = (active: boolean): CSSProperties => ({
     background: active ? 'var(--accent)' : 'var(--surface)',
     border: '1px solid var(--border)',
     color: 'var(--text)',
@@ -130,7 +130,7 @@ export default function TrendStats() {
     fontSize: 12,
   });
 
-  const chartCard: React.CSSProperties = {
+  const chartCard: CSSProperties = {
     background: 'var(--surface)',
     borderRadius: 6,
     padding: '16px 8px',
@@ -190,6 +190,7 @@ export default function TrendStats() {
             <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
             <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
             <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} />
+            <Legend wrapperStyle={{ fontSize: 11, color: 'var(--muted)' }} />
             <Line type="monotone" dataKey="kills"   stroke="#5bc0eb" dot={false} strokeWidth={2} isAnimationActive={false} name="击杀" />
             <Line type="monotone" dataKey="deaths"  stroke="#ff4655" dot={false} strokeWidth={2} isAnimationActive={false} name="死亡" />
             <Line type="monotone" dataKey="assists" stroke="#4caf50" dot={false} strokeWidth={2} isAnimationActive={false} name="助攻" />
