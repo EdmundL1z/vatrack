@@ -38,6 +38,8 @@ def _match_summary(m: Match) -> dict:
         "started_at": m.started_at,
         "duration_seconds": m.duration_seconds,
         "won_match": m.won_match,
+        "rounds_won": m.rounds_won,
+        "total_rounds": m.total_rounds,
         "kills": m.kills,
         "deaths": m.deaths,
         "assists": m.assists,
@@ -51,9 +53,21 @@ def _match_summary(m: Match) -> dict:
     }
 
 
+@router.get("/battles/filters")
+def get_battle_filters(db: Session = Depends(get_db)):
+    from sqlalchemy import distinct
+    queues = [r[0] for r in db.query(distinct(Match.queue_id)).filter(Match.queue_id.isnot(None)).all()]
+    raw_map_ids = [r[0] for r in db.query(distinct(Match.map_id)).filter(Match.map_id.isnot(None)).all()]
+    maps = [{"id": mid, "name": map_name(mid)} for mid in raw_map_ids]
+    char_ids = [r[0] for r in db.query(distinct(Match.character_id)).filter(Match.character_id.isnot(None)).all()]
+    return {"queues": queues, "maps": maps, "character_ids": char_ids}
+
+
 @router.get("/battles")
 def list_battles(
     queue: str | None = None,
+    map_id: str | None = None,
+    character_id: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -61,6 +75,10 @@ def list_battles(
     q = db.query(Match).order_by(Match.started_at.desc())
     if queue:
         q = q.filter(Match.queue_id == queue)
+    if map_id:
+        q = q.filter(Match.map_id == map_id)
+    if character_id:
+        q = q.filter(Match.character_id == character_id)
     total = q.count()
     matches = q.offset(skip).limit(limit).all()
 
@@ -135,9 +153,14 @@ def get_battle(match_id: str, db: Session = Depends(get_db)):
         "started_at": match.started_at,
         "duration_seconds": match.duration_seconds,
         "won_match": match.won_match,
+        "rounds_won": match.rounds_won,
+        "total_rounds": match.total_rounds,
         "kills": match.kills,
         "deaths": match.deaths,
         "assists": match.assists,
+        "acs": match.acs,
+        "is_mvp": match.is_mvp,
+        "is_svp": match.is_svp,
         "rr_change": match.rr_change,
         "tier_before": match.tier_before,
         "tier_after": match.tier_after,
