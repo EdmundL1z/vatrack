@@ -21,6 +21,7 @@ def agent_stats(db: Session = Depends(get_db)):
             func.avg(Match.assists).label("avg_assists"),
         )
         .filter(Match.character_id.isnot(None))
+        .filter(Match.queue_id == "competitive")
         .group_by(Match.character_id)
         .order_by(func.count().desc())
         .all()
@@ -52,6 +53,7 @@ def map_stats(db: Session = Depends(get_db)):
             func.avg(Match.assists).label("avg_assists"),
         )
         .filter(Match.map_id.isnot(None))
+        .filter(Match.queue_id == "competitive")
         .group_by(Match.map_id)
         .order_by(func.count().desc())
         .all()
@@ -86,9 +88,11 @@ def trend_stats(days: int = Query(30, ge=1, le=365), db: Session = Depends(get_d
             "match_id": m.match_id,
             "started_at": m.started_at,
             "map_name": map_name(m.map_id),
+            "character_id": m.character_id,
             "won_match": m.won_match,
             "kills": m.kills,
             "deaths": m.deaths,
+            "assists": m.assists,
             "rr_change": m.rr_change,
             "tier_after": m.tier_after,
         }
