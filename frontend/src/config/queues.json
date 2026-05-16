@@ -1,10 +1,10 @@
 {
-  "competitive":    "竞技",
-  "unrated":        "非排位",
-  "spikerush":      "辐能抢攻",
-  "deathmatch":     "死斗",
-  "swiftplay":      "极速",
-  "premier":        "甲级联赛",
+  "competitive": "竞技",
+  "unrated": "非排位",
+  "spikerush": "辐能抢攻",
+  "deathmatch": "死斗",
+  "swiftplay": "极速",
+  "premier": "甲级联赛",
   "teamdeathmatch": "团队死斗",
-  "newmap":         "新地图"
+  "newmap": "新地图"
 }
