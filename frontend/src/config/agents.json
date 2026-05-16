@@ -1,0 +1,147 @@
+{
+  "e370fa57-4757-3604-3648-499e1f642d3f": {
+    "name_cn": "盖可",
+    "name_en": "Gekko",
+    "color": "#371c5c"
+  },
+  "dade69b4-4f5a-8528-247b-219e5a1facd6": {
+    "name_cn": "黑梦",
+    "name_en": "Fade",
+    "color": "#1d2846"
+  },
+  "5f8d3a7f-467b-97f3-062c-13acf203c006": {
+    "name_cn": "铁臂",
+    "name_en": "Breach",
+    "color": "#81331a"
+  },
+  "cc8b64c8-4b25-4ff9-6e7f-37b4da43d235": {
+    "name_cn": "钢锁",
+    "name_en": "Deadlock",
+    "color": "#425495"
+  },
+  "b444168c-4e35-8076-db47-ef9bf368f384": {
+    "name_cn": "钛狐",
+    "name_en": "Tejo",
+    "color": "#80451b"
+  },
+  "f94c3b30-42be-e959-889c-5aa313dba261": {
+    "name_cn": "雷兹",
+    "name_en": "Raze",
+    "color": "#742e1e"
+  },
+  "22697a3d-45bf-8dd7-4fec-84a9e28c69d7": {
+    "name_cn": "尚勃勒",
+    "name_en": "Chamber",
+    "color": "#20435b"
+  },
+  "601dbbe7-43ce-be57-2a40-4abd24953621": {
+    "name_cn": "K/O",
+    "name_en": "KAY/O",
+    "color": "#1c2a69"
+  },
+  "6f2a04ca-43e0-be17-7f36-b3908627744d": {
+    "name_cn": "斯凯",
+    "name_en": "Skye",
+    "color": "#436a51"
+  },
+  "117ed9e3-49f3-6512-3ccf-0cada7e3823b": {
+    "name_cn": "零",
+    "name_en": "Cypher",
+    "color": "#2f5078"
+  },
+  "320b2a48-4d9b-a075-30f1-1f93a9b638fa": {
+    "name_cn": "猎枭",
+    "name_en": "Sova",
+    "color": "#355285"
+  },
+  "7c8a4701-4de6-9355-b254-e09bc2a34b72": {
+    "name_cn": "迷核",
+    "name_en": "Miks",
+    "color": "#462b75"
+  },
+  "1e58de9c-4950-5125-93e9-a0aee9f98746": {
+    "name_cn": "奇乐",
+    "name_en": "Killjoy",
+    "color": "#522162"
+  },
+  "95b78ed7-4637-86d9-7e41-71ba8c293152": {
+    "name_cn": "海神",
+    "name_en": "Harbor",
+    "color": "#275146"
+  },
+  "efba5359-4016-a1e5-7626-b1ae76895940": {
+    "name_cn": "维斯",
+    "name_en": "Vyse",
+    "color": "#492280"
+  },
+  "707eab51-4836-f488-046a-cda6bf494859": {
+    "name_cn": "蝰蛇",
+    "name_en": "Viper",
+    "color": "#1a5f46"
+  },
+  "eb93336a-449b-9c1b-0a54-a891f7921d69": {
+    "name_cn": "不死鸟",
+    "name_en": "Phoenix",
+    "color": "#74321c"
+  },
+  "92eeef5d-43b5-1d4a-8d03-b3927a09034b": {
+    "name_cn": "禁灭",
+    "name_en": "Veto",
+    "color": "#1a5d65"
+  },
+  "41fb69c1-4189-7b37-f117-bcaf1e96f1bf": {
+    "name_cn": "星礈",
+    "name_en": "Astra",
+    "color": "#26146c"
+  },
+  "9f0d8ba9-4140-b941-57d3-a7ad57c6b417": {
+    "name_cn": "炼狱",
+    "name_en": "Brimstone",
+    "color": "#363c4f"
+  },
+  "0e38b510-41a8-5780-5e8f-568b2a4f2d6c": {
+    "name_cn": "壹决",
+    "name_en": "Iso",
+    "color": "#30336e"
+  },
+  "1dbf2edd-4729-0984-3115-daa5eed44993": {
+    "name_cn": "暮蝶",
+    "name_en": "Clove",
+    "color": "#4b1d80"
+  },
+  "bb2a4828-46eb-8cd1-e765-15848195d751": {
+    "name_cn": "霓虹",
+    "name_en": "Neon",
+    "color": "#413476"
+  },
+  "7f94d92c-4234-0a36-9646-3a87eb8b5c89": {
+    "name_cn": "夜露",
+    "name_en": "Yoru",
+    "color": "#222b67"
+  },
+  "df1cb487-4902-002e-5c17-d28e83e78588": {
+    "name_cn": "幻棱",
+    "name_en": "Waylay",
+    "color": "#482e61"
+  },
+  "569fdd95-4d10-43ab-ca70-79becc718b46": {
+    "name_cn": "贤者",
+    "name_en": "Sage",
+    "color": "#1f5148"
+  },
+  "a3bfb853-43b2-7238-a4f1-ad90e9e46bcc": {
+    "name_cn": "芮娜",
+    "name_en": "Reyna",
+    "color": "#662d62"
+  },
+  "8e253930-4c05-31dd-1b6c-968525494517": {
+    "name_cn": "幽影",
+    "name_en": "Omen",
+    "color": "#433178"
+  },
+  "add6443a-41bd-e414-f6ad-e58d267f4e95": {
+    "name_cn": "捷风",
+    "name_en": "Jett",
+    "color": "#25607a"
+  }
+}
