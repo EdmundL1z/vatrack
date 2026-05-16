@@ -164,11 +164,11 @@ export default function TrendStats() {
               />
               <Tooltip
                 contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }}
-                formatter={(value: unknown) => {
-                  if (typeof value !== 'number') return [value, ''];
+                formatter={(value) => {
+                  if (typeof value !== 'number') return ['—', '段位'] as [string, string];
                   const tier = TIER_NAMES[Math.floor(value / 100)] ?? '';
                   const rr = value % 100;
-                  return [`${tier} ${rr}分`, '段位'];
+                  return [`${tier} ${rr}分`, '段位'] as [string, string];
                 }}
               />
               <Line
