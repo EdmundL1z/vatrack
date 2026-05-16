@@ -34,7 +34,7 @@ function StatCell({ value }: { value: string | number | null | undefined }) {
 const COL_PERF    = '80px 1fr 55px 80px 50px 70px 55px';
 const COL_SPECIAL = '80px 1fr 40px 40px 40px 40px 50px 40px 40px 55px';
 const PERF_HEADERS    = ['英雄', '玩家', 'ACS', 'K/D/A', 'HS%', '伤害', 'KAST%'];
-const SPECIAL_HEADERS = ['英雄', '玩家', '首杀', '三杀', '四杀', '五杀', 'Clutch', '种弹', '拆弹', '经济'];
+const SPECIAL_HEADERS = ['英雄', '玩家', '首杀', '三杀', '四杀', '五杀', 'Clutch', '种弹', '拆弹', '经济分'];
 
 function PlayerRow({ p, highlight, tab, agentNameFn }: {
   p: Player; highlight: boolean; tab: Tab; agentNameFn: (uuid: string) => string;
@@ -86,8 +86,8 @@ function PlayerRow({ p, highlight, tab, agentNameFn }: {
   );
 }
 
-function TeamSection({ label, color, players, myCharacterId, tab, agentNameFn }: {
-  label: string; color: string; players: Player[]; myCharacterId: string; tab: Tab;
+function TeamSection({ label, color, players, mySubject, tab, agentNameFn }: {
+  label: string; color: string; players: Player[]; mySubject: string; tab: Tab;
   agentNameFn: (uuid: string) => string;
 }) {
   const cols = tab === '战绩' ? COL_PERF : COL_SPECIAL;
@@ -107,7 +107,7 @@ function TeamSection({ label, color, players, myCharacterId, tab, agentNameFn }:
         ))}
       </div>
       {players.map(p => (
-        <PlayerRow key={p.subject} p={p} highlight={p.character_id === myCharacterId}
+        <PlayerRow key={p.subject} p={p} highlight={p.subject === mySubject}
           tab={tab} agentNameFn={agentNameFn} />
       ))}
     </div>
@@ -179,7 +179,7 @@ export default function BattleDetail({ matchId, onBack }: Props) {
           <span style={{ fontWeight: 500 }}>{agentName(match.character_id)}</span>
           {myPlayer && (
             <span style={{ color: 'var(--muted)' }}>
-              {myPlayer.kills}/{myPlayer.deaths}/{myPlayer.assists}
+              {myPlayer.kills} / {myPlayer.deaths} / {myPlayer.assists}
             </span>
           )}
           {myPlayer?.acs != null && (
@@ -204,14 +204,14 @@ export default function BattleDetail({ matchId, onBack }: Props) {
       <div style={{ background: 'var(--surface)', borderRadius: 6, overflow: 'hidden' }}>
         {isDm ? (
           <TeamSection label="所有玩家" color="var(--muted)"
-            players={sortByAcs(match.players)} myCharacterId={match.character_id}
+            players={sortByAcs(match.players)} mySubject={myPlayer?.subject ?? ''}
             tab={tab} agentNameFn={agentName} />
         ) : (
           <>
             <TeamSection label="我方" color="var(--win)" players={myTeam}
-              myCharacterId={match.character_id} tab={tab} agentNameFn={agentName} />
+              mySubject={myPlayer?.subject ?? ''} tab={tab} agentNameFn={agentName} />
             <TeamSection label="对方" color="var(--loss)" players={enemies}
-              myCharacterId={match.character_id} tab={tab} agentNameFn={agentName} />
+              mySubject={myPlayer?.subject ?? ''} tab={tab} agentNameFn={agentName} />
           </>
         )}
       </div>
