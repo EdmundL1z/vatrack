@@ -13,6 +13,8 @@ export interface MatchSummary {
   started_at: number;
   duration_seconds: number;
   won_match: boolean;
+  rounds_won: number | null;
+  total_rounds: number | null;
   kills: number;
   deaths: number;
   assists: number;
@@ -27,7 +29,7 @@ export interface MatchSummary {
 
 export interface Player {
   subject: string;
-  name: string;
+  name: string | null;
   team_id: string;
   character_id: string;
   kills: number;
@@ -41,14 +43,15 @@ export interface Player {
   legshots: number;
   hs_pct: number | null;
   total_damage: number;
-  kast: number;
-  first_kills: number;
-  triple_kills: number;
-  quadra_kills: number;
-  penta_kills: number;
-  clutch_count: number;
-  bomb_plants: number;
-  bomb_defuses: number;
+  kast: number | null;
+  economy_score: number | null;
+  first_kills: number | null;
+  triple_kills: number | null;
+  quadra_kills: number | null;
+  penta_kills: number | null;
+  clutch_count: number | null;
+  bomb_plants: number | null;
+  bomb_defuses: number | null;
   is_friend: boolean;
 }
 
@@ -62,8 +65,25 @@ export interface BattleListResponse {
   matches: MatchSummary[];
 }
 
-export const getBattles = (limit = 50) =>
-  client.get<BattleListResponse>("/battles", { params: { limit } });
+export interface BattleListFilters {
+  queues: string[];
+  maps: { id: string; name: string }[];
+  character_ids: string[];
+}
+
+export interface BattleListParams {
+  queue?: string;
+  map_id?: string;
+  character_id?: string;
+  skip?: number;
+  limit?: number;
+}
+
+export const getBattles = (params: BattleListParams = {}) =>
+  client.get<BattleListResponse>('/battles', { params });
+
+export const getBattleFilters = () =>
+  client.get<BattleListFilters>('/battles/filters');
 
 export const getBattle = (id: string) =>
   client.get<MatchDetail>(`/battles/${id}`);
@@ -94,9 +114,11 @@ export interface TrendMatch {
   match_id: string;
   started_at: number;
   map_name: string;
+  character_id: string | null;
   won_match: boolean;
   kills: number;
   deaths: number;
+  assists: number;
   rr_change: number | null;
   tier_after: number | null;
 }
