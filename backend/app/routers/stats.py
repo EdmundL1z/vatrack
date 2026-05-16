@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import Integer, cast, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -17,7 +17,7 @@ def agent_stats(db: Session = Depends(get_db)):
         db.query(
             Match.character_id,
             func.count().label("played"),
-            func.sum(Match.won_match).label("wins"),
+            func.sum(cast(Match.won_match, Integer)).label("wins"),
             func.avg(Match.kills).label("avg_kills"),
             func.avg(Match.deaths).label("avg_deaths"),
             func.avg(Match.assists).label("avg_assists"),
@@ -49,7 +49,7 @@ def map_stats(db: Session = Depends(get_db)):
         db.query(
             Match.map_id,
             func.count().label("played"),
-            func.sum(Match.won_match).label("wins"),
+            func.sum(cast(Match.won_match, Integer)).label("wins"),
             func.avg(Match.kills).label("avg_kills"),
             func.avg(Match.deaths).label("avg_deaths"),
             func.avg(Match.assists).label("avg_assists"),
