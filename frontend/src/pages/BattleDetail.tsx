@@ -136,11 +136,17 @@ export default function BattleDetail({ matchId, onBack }: Props) {
   const rrLabel = match.rr_change != null
     ? (match.rr_change >= 0 ? `+${match.rr_change} RR` : `${match.rr_change} RR`)
     : null;
+  const rrColor = (match.rr_change ?? -1) >= 0 ? 'var(--win)' : 'var(--loss)';
   const score = match.rounds_won != null && match.total_rounds != null
     ? `${match.rounds_won} : ${match.total_rounds - match.rounds_won}`
     : null;
 
-  const myPlayer = match.players.find(p => p.character_id === match.character_id);
+  // character_id is the agent UUID we played; use kills/deaths as tiebreaker
+  // in the rare case an enemy played the same agent (mirror picks are allowed cross-team)
+  const myCandidates = match.players.filter(p => p.character_id === match.character_id);
+  const myPlayer = myCandidates.length <= 1
+    ? myCandidates[0]
+    : (myCandidates.find(p => p.kills === match.kills && p.deaths === match.deaths) ?? myCandidates[0]);
   const myTeamId = myPlayer?.team_id;
   const sortByAcs = (ps: Player[]) => [...ps].sort((a, b) => (b.acs ?? b.kills) - (a.acs ?? a.kills));
   const myTeam  = sortByAcs(match.players.filter(p => p.team_id === myTeamId));
@@ -186,7 +192,7 @@ export default function BattleDetail({ matchId, onBack }: Props) {
             <span style={{ color: 'var(--muted)' }}>ACS {Math.round(myPlayer.acs)}</span>
           )}
           {rrLabel && (
-            <span style={{ color: match.rr_change! >= 0 ? 'var(--win)' : 'var(--loss)', fontWeight: 'bold' }}>
+            <span style={{ color: rrColor, fontWeight: 'bold' }}>
               {rrLabel}
             </span>
           )}
