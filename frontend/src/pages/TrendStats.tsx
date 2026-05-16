@@ -11,7 +11,7 @@ import { useGameData } from '../hooks/useGameData';
 // Update when your rank changes significantly or a new season resets RR.
 // Check your actual tier ID: curl http://localhost:8000/api/stats/trends?days=7 | grep tier_after
 // Then find it in TIER_NAMES below and set RR_ANCHOR.tier to that ID.
-const RR_ANCHOR = { tier: 14, rr: 6 };
+const RR_ANCHOR = { tier: 16, rr: 6 };
 
 // Valorant tier ID → Chinese name. Verify tier IDs against actual DB values.
 const TIER_NAMES: Record<number, string> = {
@@ -96,6 +96,23 @@ function buildAgentData(matches: TrendMatch[], agentNameFn: (uuid: string) => st
     .sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses));
 }
 
+const btnStyle = (active: boolean): CSSProperties => ({
+  background: active ? 'var(--accent)' : 'var(--surface)',
+  border: '1px solid var(--border)',
+  color: 'var(--text)',
+  borderRadius: 4,
+  padding: '4px 12px',
+  cursor: 'pointer',
+  fontSize: 12,
+});
+
+const chartCard: CSSProperties = {
+  background: 'var(--surface)',
+  borderRadius: 6,
+  padding: '16px 8px',
+  marginBottom: 16,
+};
+
 export default function TrendStats() {
   const [allMatches, setAllMatches] = useState<TrendMatch[]>([]);
   const [days, setDays] = useState<DayRange>(30);
@@ -119,23 +136,6 @@ export default function TrendStats() {
   const rrData    = buildRRData(allMatches);
   const kdaData   = buildKDAData(allMatches);
   const agentData = buildAgentData(allMatches, agentName);
-
-  const btnStyle = (active: boolean): CSSProperties => ({
-    background: active ? 'var(--accent)' : 'var(--surface)',
-    border: '1px solid var(--border)',
-    color: 'var(--text)',
-    borderRadius: 4,
-    padding: '4px 12px',
-    cursor: 'pointer',
-    fontSize: 12,
-  });
-
-  const chartCard: CSSProperties = {
-    background: 'var(--surface)',
-    borderRadius: 6,
-    padding: '16px 8px',
-    marginBottom: 16,
-  };
 
   return (
     <div>
@@ -164,6 +164,7 @@ export default function TrendStats() {
               />
               <Tooltip
                 contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }}
+                wrapperStyle={{ transform: 'translateY(-110%)' }}
                 formatter={(value) => {
                   if (typeof value !== 'number') return ['—', '段位'] as [string, string];
                   const tier = TIER_NAMES[Math.floor(value / 100)] ?? '';
@@ -189,7 +190,7 @@ export default function TrendStats() {
           <LineChart data={kdaData}>
             <XAxis dataKey="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
             <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} />
+            <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} wrapperStyle={{ transform: 'translateY(-110%)' }} />
             <Legend wrapperStyle={{ fontSize: 11, color: 'var(--muted)' }} />
             <Line type="monotone" dataKey="kills"   stroke="#5bc0eb" dot={false} strokeWidth={2} isAnimationActive={false} name="击杀" />
             <Line type="monotone" dataKey="deaths"  stroke="#ff4655" dot={false} strokeWidth={2} isAnimationActive={false} name="死亡" />
@@ -206,7 +207,7 @@ export default function TrendStats() {
             <BarChart data={agentData}>
               <XAxis dataKey="name" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
               <YAxis tick={{ fill: 'var(--muted)', fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', fontSize: 11 }} wrapperStyle={{ transform: 'translateY(-110%)' }} />
               <Bar dataKey="wins"   name="胜" stackId="a" fill="var(--win)"  isAnimationActive={false} />
               <Bar dataKey="losses" name="负" stackId="a" fill="var(--loss)" isAnimationActive={false} />
             </BarChart>
@@ -221,7 +222,7 @@ export default function TrendStats() {
           {allMatches.map(m => (
             <div
               key={m.match_id}
-              title={`${mapName(m.map_name)} ${m.kills}/${m.deaths}/${m.assists}`}
+              data-tip={`${mapName(m.map_name)} ${m.kills}/${m.deaths}/${m.assists}`}
               style={{
                 width: 14,
                 height: 14,

@@ -9,10 +9,13 @@ const agentsMap = agents as Record<string, AgentEntry>;
 const mapsMap   = maps   as Record<string, MapEntry>;
 const queuesMap = queues as Record<string, string>;
 
+const agentName  = (uuid: string): string => agentsMap[uuid?.toLowerCase()]?.name_cn ?? uuid?.slice(0, 8) ?? '—';
+const agentColor = (uuid: string): string => agentsMap[uuid?.toLowerCase()]?.color   ?? '#555555';
+const mapName    = (en: string):   string => mapsMap[en]?.name_cn  ?? en;
+const queueName  = (id: string):   string => queuesMap[id]         ?? id;
+
+const gameData = { agentName, agentColor, mapName, queueName };
+
 export function useGameData() {
-  const agentName  = (uuid: string): string => agentsMap[uuid?.toLowerCase()]?.name_cn ?? uuid?.slice(0, 8) ?? '—';
-  const agentColor = (uuid: string): string => agentsMap[uuid?.toLowerCase()]?.color   ?? '#555555';
-  const mapName    = (en: string):   string => mapsMap[en]?.name_cn  ?? en;
-  const queueName  = (id: string):   string => queuesMap[id]         ?? id;
-  return { agentName, agentColor, mapName, queueName };
+  return gameData;
 }

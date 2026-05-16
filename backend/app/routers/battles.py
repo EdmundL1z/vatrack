@@ -1,6 +1,7 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import distinct
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -55,7 +56,6 @@ def _match_summary(m: Match) -> dict:
 
 @router.get("/battles/filters")
 def get_battle_filters(db: Session = Depends(get_db)):
-    from sqlalchemy import distinct
     queues = [r[0] for r in db.query(distinct(Match.queue_id)).filter(Match.queue_id.isnot(None)).all()]
     raw_map_ids = [r[0] for r in db.query(distinct(Match.map_id)).filter(Match.map_id.isnot(None)).all()]
     maps = [{"id": mid, "name": map_name(mid)} for mid in raw_map_ids]

@@ -12,7 +12,9 @@ function relativeTime(ts: number): string {
   if (diff < 86400 * 2) return '昨天';
   if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} 天前`;
   const d = new Date(ts * 1000);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  const now = new Date();
+  const prefix = d.getFullYear() !== now.getFullYear() ? `${d.getFullYear()}/` : '';
+  return `${prefix}${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 interface Props {
@@ -133,7 +135,7 @@ export default function BattleList({ onSelectMatch }: Props) {
                 textAlign: 'right',
                 fontWeight: 'bold',
                 fontSize: 12,
-                color: !rrLabel ? 'var(--muted)' : m.rr_change! >= 0 ? 'var(--win)' : 'var(--loss)',
+                color: !rrLabel ? 'var(--muted)' : (m.rr_change ?? -1) >= 0 ? 'var(--win)' : 'var(--loss)',
               }}>
                 {rrLabel ?? '—'}
               </div>

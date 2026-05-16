@@ -36,11 +36,10 @@ const COL_SPECIAL = '80px 1fr 40px 40px 40px 40px 50px 40px 40px 55px';
 const PERF_HEADERS    = ['英雄', '玩家', 'ACS', 'K/D/A', 'HS%', '伤害', 'KAST%'];
 const SPECIAL_HEADERS = ['英雄', '玩家', '首杀', '三杀', '四杀', '五杀', 'Clutch', '种弹', '拆弹', '经济分'];
 
-function PlayerRow({ p, highlight, tab, agentNameFn }: {
-  p: Player; highlight: boolean; tab: Tab; agentNameFn: (uuid: string) => string;
+function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
+  p: Player; highlight: boolean; tab: Tab; cols: string; agentNameFn: (uuid: string) => string;
 }) {
   const name = p.name ?? p.subject.slice(0, 8);
-  const cols = tab === '战绩' ? COL_PERF : COL_SPECIAL;
 
   return (
     <div style={{
@@ -108,7 +107,7 @@ function TeamSection({ label, color, players, mySubject, tab, agentNameFn }: {
       </div>
       {players.map(p => (
         <PlayerRow key={p.subject} p={p} highlight={p.subject === mySubject}
-          tab={tab} agentNameFn={agentNameFn} />
+          tab={tab} cols={cols} agentNameFn={agentNameFn} />
       ))}
     </div>
   );
