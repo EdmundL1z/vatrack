@@ -36,9 +36,9 @@ function StatCell({ value }: { value: string | number | null | undefined }) {
   );
 }
 
-const COL_PERF    = '80px 1fr 55px 80px 50px 70px 55px';
-const COL_SPECIAL = '80px 1fr 40px 40px 40px 40px 50px 40px 40px 55px';
-const PERF_HEADERS    = ['英雄', '玩家', 'ACS', 'K/D/A', 'HS%', '伤害', 'KAST%'];
+const COL_PERF    = '38px 160px 92px 60px 50px 72px 52px';
+const COL_SPECIAL = '38px 160px 40px 40px 40px 40px 52px 40px 40px 56px';
+const PERF_HEADERS    = ['英雄', '玩家', 'K/D/A', 'ACS', 'HS%', '伤害', 'KAST%'];
 const SPECIAL_HEADERS = ['英雄', '玩家', '首杀', '三杀', '四杀', '五杀', 'Clutch', '种弹', '拆弹', '经济分'];
 
 function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
@@ -54,20 +54,36 @@ function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
       borderLeft: highlight ? '2px solid rgba(255,70,85,0.5)' : '2px solid transparent',
       fontSize: 12, alignItems: 'center', gap: 4,
     }}>
-      <div style={{ color: 'var(--subtext)', fontSize: 11, letterSpacing: '0.02em' }}>{agentNameFn(p.character_id)}</div>
-      <div style={{ fontWeight: highlight ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {name}
-        {p.is_match_mvp && <span style={{ color: 'var(--accent)', fontSize: 10, marginLeft: 6, letterSpacing: '0.06em' }}>MVP</span>}
-        {p.is_team_mvp && !p.is_match_mvp && <span style={{ color: 'var(--gold)', fontSize: 10, marginLeft: 6, letterSpacing: '0.06em' }}>SVP</span>}
+      <div style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {agentNameFn(p.character_id)}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: highlight ? 600 : 400 }}>
+          {name}
+        </span>
+        {p.is_match_mvp && (
+          <span style={{ color: 'var(--accent)', fontSize: 9, flexShrink: 0, letterSpacing: '0.06em' }}>MVP</span>
+        )}
+        {p.is_team_mvp && !p.is_match_mvp && (
+          <span style={{ color: 'var(--gold)', fontSize: 9, flexShrink: 0, letterSpacing: '0.06em' }}>SVP</span>
+        )}
+        {p.is_friend && (
+          <span style={{
+            fontSize: 9, flexShrink: 0, color: 'var(--win)',
+            border: '1px solid rgba(0,212,160,0.35)', borderRadius: 1,
+            padding: '1px 4px', letterSpacing: '0.04em',
+          }}>友</span>
+        )}
       </div>
 
       {tab === '战绩' ? <>
-        <StatCell value={p.acs != null ? Math.round(p.acs) : null} />
+        {/* KDA first — most-watched stat */}
         <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
           {p.kills}<span style={{ color: 'var(--muted)' }}>/</span>
           <span style={{ color: 'var(--loss)' }}>{p.deaths}</span>
           <span style={{ color: 'var(--muted)' }}>/</span>{p.assists}
         </div>
+        <StatCell value={p.acs != null ? Math.round(p.acs) : null} />
         <StatCell value={p.hs_pct != null ? `${p.hs_pct}%` : null} />
         <StatCell value={p.total_damage > 0 ? p.total_damage.toLocaleString() : null} />
         <StatCell value={p.kast != null ? `${Math.round(p.kast * 100)}%` : null} />
