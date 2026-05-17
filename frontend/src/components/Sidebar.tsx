@@ -1,4 +1,4 @@
-type Page = 'list' | 'detail' | 'agents' | 'maps' | 'trends';
+type Page = 'list' | 'detail' | 'agents' | 'maps' | 'trends' | 'friends';
 
 interface SidebarProps {
   page: Page;
@@ -10,6 +10,7 @@ const NAV: { label: string; page: Page }[] = [
   { label: '英雄统计', page: 'agents' },
   { label: '地图统计', page: 'maps' },
   { label: 'RR 趋势',  page: 'trends' },
+  { label: '好友统计', page: 'friends' },
 ];
 
 export default function Sidebar({ page, onNavigate }: SidebarProps) {
