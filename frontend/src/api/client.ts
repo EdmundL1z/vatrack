@@ -131,3 +131,14 @@ export const getMapStats = () =>
 
 export const getTrendStats = (days = 30) =>
   client.get<TrendMatch[]>('/stats/trends', { params: { days } });
+
+export interface FriendStat {
+  subject: string;
+  name: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+}
+
+export const getFriendStats = (subject?: string) =>
+  client.get<FriendStat[]>('/stats/friends', subject ? { params: { subject } } : {});
