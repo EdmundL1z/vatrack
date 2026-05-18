@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Match, MatchDetail
 from app.services.cookie_store import is_valid, get_expires_at
+from app.services.sync_job_state import _read_state
 from app.services.sync import run_incremental_sync, run_full_sync
 
 router = APIRouter()
@@ -29,8 +30,27 @@ class SyncRequest(BaseModel):
 
 @router.get("/sync/status")
 def sync_status():
-    """Cookie validity and expiry for monitoring."""
-    return {"cookie_valid": is_valid(), "cookie_expires_at": get_expires_at()}
+    """Cookie validity, expiry, and hourly sync job state for monitoring."""
+    return {
+        "cookie_valid": is_valid(),
+        "cookie_expires_at": get_expires_at(),
+        "sync_job": _read_state(),
+    }
+
+
+@router.post("/sync/ack-failure")
+def ack_sync_failure(x_sync_token: str = Header(default="")):
+    """Acknowledge the active sync failure so future failures can alert again."""
+    if SYNC_TOKEN and x_sync_token != SYNC_TOKEN:
+        raise HTTPException(status_code=403, detail="Invalid sync token")
+    from app.services.sync_job_state import _write_state
+
+    state = _read_state()
+    if state.get("active_failure"):
+        state["acknowledged"] = True
+        state["notified"] = True
+        _write_state(state)
+    return {"status": "ok", "sync_job": state}
 
 
 @router.post("/sync/trigger")
