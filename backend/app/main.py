@@ -4,11 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import models
 from app.database import engine
 from app.routers import auth, battles, stats, sync
+from app.scheduler import start_scheduler
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     models.Base.metadata.create_all(bind=engine)
+    start_scheduler()
     yield
 
 

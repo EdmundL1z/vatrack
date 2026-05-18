@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Match, MatchDetail
+from app.services.cookie_store import is_valid, get_expires_at
+from app.services.sync import run_incremental_sync, run_full_sync
 
 router = APIRouter()
 
@@ -23,6 +25,19 @@ class MatchPayload(BaseModel):
 
 class SyncRequest(BaseModel):
     matches: list[MatchPayload]
+
+
+@router.get("/sync/status")
+def sync_status():
+    """Cookie validity and expiry for monitoring."""
+    return {"cookie_valid": is_valid(), "cookie_expires_at": get_expires_at()}
+
+
+@router.post("/sync/trigger")
+async def trigger_sync(full: bool = False):
+    """Manually trigger a sync. Use ?full=true for a 100-match backfill."""
+    result = await run_full_sync() if full else await run_incremental_sync()
+    return result
 
 
 @router.get("/battles/ids")
