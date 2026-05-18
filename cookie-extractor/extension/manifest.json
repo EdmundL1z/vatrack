@@ -6,7 +6,7 @@
   "permissions": ["tabs", "scripting"],
   "host_permissions": [
     "https://www.wegame.com.cn/*",
-    "http://64.90.21.168/*"
+    "https://vatrack.edmund1z.cc/*"
   ],
   "action": {
     "default_popup": "popup.html"
