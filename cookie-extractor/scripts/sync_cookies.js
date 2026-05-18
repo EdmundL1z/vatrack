@@ -1,19 +1,55 @@
+/**
+ * WeGame Cookie Sync — full flow:
+ *   kill browser → launch with debug port → open WeGame → wait for login
+ *   → extract cookies → push to server → close browser
+ *
+ * Config (env vars or .env two levels up):
+ *   SERVER_URL         e.g. https://vatrack.edmund1z.cc
+ *   COOKIE_SYNC_TOKEN  secret token
+ *   BROWSER            edge (default) | chrome
+ *
+ * Usage:
+ *   node scripts/sync_cookies.js
+ *   npm run sync
+ */
+
 const CDP = require("chrome-remote-interface");
 const { execSync, spawn } = require("child_process");
 const fs = require("fs");
 const net = require("net");
+const path = require("path");
 
-const SERVER_URL = process.env.SERVER_URL;
-const SYNC_TOKEN = process.env.COOKIE_SYNC_TOKEN;
-// Set BROWSER=chrome to use Chrome instead; defaults to Edge
-const BROWSER = (process.env.BROWSER || "edge").toLowerCase();
-const WEGAME_DOMAIN = "www.wegame.com.cn";
-const DEBUG_PORT = 9222;
+// ── Config ────────────────────────────────────────────────────────────────────
+
+function loadEnv() {
+  const envPath = path.join(__dirname, "..", "..", ".env");
+  if (!fs.existsSync(envPath)) return;
+  for (const line of fs.readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+  }
+}
+loadEnv();
+
+const SERVER_URL  = process.env.SERVER_URL;
+const SYNC_TOKEN  = process.env.COOKIE_SYNC_TOKEN;
+const BROWSER     = (process.env.BROWSER || "edge").toLowerCase();
+const WEGAME_URL  = "https://www.wegame.com.cn/home/valorant/index.html";
+const WEGAME_HOST = "www.wegame.com.cn";
+const DEBUG_PORT  = 9222;
+// Auth cookies that only appear after a successful WeGame login
+const AUTH_COOKIE_NAMES = new Set(["p_skey", "tgp_ticket", "pt4_token"]);
+const LOGIN_TIMEOUT_MS  = 3 * 60 * 1000; // 3 minutes
 
 if (!SERVER_URL || !SYNC_TOKEN) {
-  console.error("Missing SERVER_URL or COOKIE_SYNC_TOKEN environment variables");
+  console.error(
+    "Missing SERVER_URL or COOKIE_SYNC_TOKEN.\n" +
+    "Set them in .env (project root) or as environment variables."
+  );
   process.exit(1);
 }
+
+// ── Browser config ────────────────────────────────────────────────────────────
 
 const BROWSER_CONFIG = {
   edge: {
@@ -38,79 +74,64 @@ const BROWSER_CONFIG = {
 
 const cfg = BROWSER_CONFIG[BROWSER];
 if (!cfg) {
-  console.error(`Unknown BROWSER value "${BROWSER}". Use "edge" or "chrome".`);
+  console.error(`Unknown BROWSER "${BROWSER}". Use "edge" or "chrome".`);
   process.exit(1);
 }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function findBrowser() {
   for (const p of cfg.exePaths) {
     if (p && fs.existsSync(p)) return p;
   }
-  throw new Error(
-    `${BROWSER} not found. Check installation or set BROWSER=chrome to use Chrome instead.`
-  );
-}
-
-function isBrowserRunning() {
-  try {
-    const out = execSync(
-      `powershell -NonInteractive -Command "(Get-Process ${cfg.processName.replace(".exe", "")} -ErrorAction SilentlyContinue) -ne $null"`,
-      { encoding: "utf8" }
-    );
-    return out.trim() === "True";
-  } catch {
-    return false;
-  }
+  throw new Error(`${BROWSER} executable not found. Is it installed?`);
 }
 
 function killBrowser() {
-  try {
-    execSync(`taskkill /F /IM ${cfg.processName} /T`, { stdio: "ignore" });
-  } catch {}
-  const deadline = Date.now() + 5000;
+  try { execSync(`taskkill /F /IM ${cfg.processName} /T`, { stdio: "ignore" }); } catch {}
+  // Wait up to 6 s for all processes to die
+  const deadline = Date.now() + 6000;
   while (Date.now() < deadline) {
-    if (!isBrowserRunning()) return;
+    try {
+      const out = execSync(
+        `powershell -NonInteractive -Command "(Get-Process ${cfg.processName.replace(".exe", "")} -ErrorAction SilentlyContinue) -ne $null"`,
+        { encoding: "utf8" }
+      );
+      if (out.trim() !== "True") return;
+    } catch { return; }
     execSync("ping -n 1 127.0.0.1 > nul", { stdio: "ignore" });
   }
 }
 
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
 async function isPortOpen(port) {
-  return new Promise((resolve) => {
-    const socket = net.createConnection(port, "127.0.0.1");
-    socket.setTimeout(500);
-    socket.on("connect", () => { socket.destroy(); resolve(true); });
-    socket.on("error", () => resolve(false));
-    socket.on("timeout", () => { socket.destroy(); resolve(false); });
+  return new Promise(resolve => {
+    const s = net.createConnection(port, "127.0.0.1");
+    s.setTimeout(500);
+    s.on("connect", () => { s.destroy(); resolve(true); });
+    s.on("error",   () => resolve(false));
+    s.on("timeout", () => { s.destroy(); resolve(false); });
   });
 }
 
-async function waitForPort(port, timeoutMs = 15000) {
+async function waitForPort(port, timeoutMs = 20000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await isPortOpen(port)) return;
-    await new Promise((r) => setTimeout(r, 400));
+    await sleep(400);
   }
-  throw new Error(`${BROWSER} did not start within 15 seconds`);
+  throw new Error(`${BROWSER} did not open debug port in time.`);
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+// ── Core ──────────────────────────────────────────────────────────────────────
 
-async function ensureBrowserWithDebugPort() {
-  if (await isPortOpen(DEBUG_PORT)) {
-    return { weStartedBrowser: false };
-  }
+async function launchBrowser() {
+  console.log(`[1/4] Killing existing ${BROWSER} processes...`);
+  killBrowser();
+  await sleep(800);
 
-  const wasRunning = isBrowserRunning();
-  if (wasRunning) {
-    console.log(`${BROWSER} is running without debug port — restarting it...`);
-    killBrowser();
-    await sleep(1500);
-  } else {
-    console.log(`${BROWSER} is not running — launching it...`);
-  }
-
+  console.log(`[2/4] Launching ${BROWSER} with debug port ${DEBUG_PORT}...`);
   const exePath = findBrowser();
   spawn(
     exePath,
@@ -119,28 +140,45 @@ async function ensureBrowserWithDebugPort() {
       `--user-data-dir=${cfg.userDataDir}`,
       "--no-first-run",
       "--no-default-browser-check",
+      WEGAME_URL,   // open WeGame directly
     ],
     { detached: true, stdio: "ignore" }
   ).unref();
 
   await waitForPort(DEBUG_PORT);
-  await sleep(1000);
-
-  return { weStartedBrowser: !wasRunning };
+  await sleep(1200); // let browser fully initialise
 }
 
-async function extractCookies() {
-  const { weStartedBrowser } = await ensureBrowserWithDebugPort();
+async function waitForLogin() {
+  console.log(`[3/4] Waiting for WeGame login (timeout: 3 min)...`);
+  console.log(`      → ${WEGAME_URL}`);
+  console.log(`      Please scan the QR code in the browser window.`);
 
   let client;
   try {
     client = await CDP({ port: DEBUG_PORT });
     const { Network } = client;
     await Network.enable();
-    const { cookies } = await Network.getCookies({ urls: [`https://${WEGAME_DOMAIN}`] });
-    await client.close();
-    console.log(`Using ${BROWSER} — found ${cookies.length} cookies for ${WEGAME_DOMAIN}`);
-    return { cookies, weStartedBrowser };
+
+    const deadline = Date.now() + LOGIN_TIMEOUT_MS;
+    let dotCount = 0;
+
+    while (Date.now() < deadline) {
+      const { cookies } = await Network.getCookies({ urls: [`https://${WEGAME_HOST}`] });
+      const hasAuth = cookies.some(c => AUTH_COOKIE_NAMES.has(c.name));
+      if (hasAuth) {
+        process.stdout.write("\n");
+        console.log(`      Login detected (${cookies.length} cookies).`);
+        await client.close();
+        return cookies;
+      }
+      // Animated waiting indicator
+      process.stdout.write("\r      Waiting" + ".".repeat((dotCount++ % 3) + 1) + "   ");
+      await sleep(2000);
+    }
+
+    process.stdout.write("\n");
+    throw new Error("Login timed out after 3 minutes. Run the script again after logging in.");
   } catch (err) {
     if (client) await client.close().catch(() => {});
     throw err;
@@ -163,28 +201,24 @@ async function pushCookies(cookies) {
   return res.json();
 }
 
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 async function main() {
-  console.log(`Extracting cookies from ${BROWSER}...`);
-  const { cookies, weStartedBrowser } = await extractCookies();
+  await launchBrowser();
+  const cookies = await waitForLogin();
 
-  if (cookies.length === 0) {
-    console.warn(
-      `No cookies found for WeGame — is the account logged in on this ${BROWSER} profile?\n` +
-      `Tip: open ${BROWSER} and log into wegame.com.cn first, then run this script again.`
-    );
-    process.exit(1);
-  }
-
+  console.log(`[4/4] Pushing ${cookies.length} cookies to server...`);
   const result = await pushCookies(cookies);
-  console.log(`Server stored ${result.count} cookies.`);
+  console.log(`      Server stored ${result.count} cookies. ✓`);
 
-  if (weStartedBrowser) {
-    killBrowser();
-    console.log(`${BROWSER} closed (was not running before sync).`);
-  }
+  console.log(`      Closing ${BROWSER}...`);
+  killBrowser();
+  console.log(`\nDone. WeGame session is now active on the server.`);
 }
 
-main().catch((err) => {
-  console.error("Sync failed:", err.message);
+main().catch(err => {
+  console.error("\nSync failed:", err.message);
+  // Always try to close the browser on error
+  try { killBrowser(); } catch {}
   process.exit(1);
 });
