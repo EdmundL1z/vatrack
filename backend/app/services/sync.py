@@ -9,6 +9,67 @@ from app.services.wegame import get_battle_list, get_battle_detail
 
 logger = logging.getLogger(__name__)
 
+PAGE_SIZE = 11
+PAGE_ITEMS = PAGE_SIZE - 1
+MAX_ITEMS = 100
+
+
+def _match_id(battle: dict) -> str | None:
+    return battle.get("matchId") or battle.get("match_id")
+
+
+def _ap_event_id(battle: dict) -> str | None:
+    return battle.get("apEventId") or battle.get("ap_event_id")
+
+
+def _ms_to_after(ms) -> str | None:
+    value = _int(ms)
+    if value is None:
+        return None
+    from datetime import datetime
+    return datetime.fromtimestamp(value / 1000).strftime("%Y%m%d%H%M%S")
+
+
+async def _fetch_battle_pages(stop_on_existing: bool) -> dict:
+    """Fetch battle list using the same size=11 + after lookahead paging as the extension."""
+    db: Session = SessionLocal()
+    items = []
+    seen = set()
+    after = None
+    pages = 0
+    caught_up = False
+    try:
+        while len(items) < MAX_ITEMS:
+            resp = await get_battle_list(size=PAGE_SIZE, after=after)
+            pages += 1
+            page = resp.get("battles", [])
+            real_items = page[:PAGE_ITEMS]
+
+            for item in real_items:
+                match_id = _match_id(item)
+                if not match_id or match_id in seen:
+                    continue
+                if stop_on_existing and db.get(Match, match_id):
+                    caught_up = True
+                    break
+                seen.add(match_id)
+                items.append(item)
+                if len(items) >= MAX_ITEMS:
+                    break
+
+            has_more = len(page) == PAGE_SIZE
+            if caught_up or len(items) >= MAX_ITEMS or not has_more:
+                break
+
+            lookahead = page[PAGE_SIZE - 1]
+            after = _ms_to_after(lookahead.get("gameStartMillis"))
+            if not after:
+                break
+    finally:
+        db.close()
+
+    return {"battles": items, "pages": pages, "caught_up": caught_up}
+
 
 def _int(v):
     try:
@@ -48,8 +109,8 @@ async def _sync(battles: list) -> dict:
     inserted = skipped = detail_failed = 0
     try:
         for b in battles:
-            match_id    = b.get("matchId")    or b.get("match_id")
-            ap_event_id = b.get("apEventId")  or b.get("ap_event_id")
+            match_id    = _match_id(b)
+            ap_event_id = _ap_event_id(b)
             if not match_id or not ap_event_id:
                 continue
 
@@ -88,9 +149,9 @@ async def run_incremental_sync() -> dict:
 
     logger.info("Starting incremental sync...")
     try:
-        resp = await get_battle_list(size=100)
-        battles = resp.get("battles", [])
-        result = await _sync(battles)
+        fetched = await _fetch_battle_pages(stop_on_existing=True)
+        result = await _sync(fetched["battles"])
+        result.update({"fetched": len(fetched["battles"]), "pages": fetched["pages"], "caught_up": fetched["caught_up"]})
         logger.info("Incremental sync done: %s", result)
         return result
     except Exception as e:
@@ -106,9 +167,9 @@ async def run_full_sync() -> dict:
 
     logger.info("Starting full sync (up to 100 matches)...")
     try:
-        resp = await get_battle_list(size=100)
-        battles = resp.get("battles", [])
-        result = await _sync(battles)
+        fetched = await _fetch_battle_pages(stop_on_existing=False)
+        result = await _sync(fetched["battles"])
+        result.update({"fetched": len(fetched["battles"]), "pages": fetched["pages"], "caught_up": fetched["caught_up"]})
         logger.info("Full sync done: %s", result)
         return result
     except Exception as e:

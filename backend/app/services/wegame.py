@@ -60,8 +60,11 @@ async def _post(endpoint: str, body: dict) -> dict:
     return data
 
 
-async def get_battle_list(size: int = 20) -> dict:
-    return await _post("GetBattleList", {"from_src": "valorant_web", "size": size})
+async def get_battle_list(size: int = 20, after: str | None = None) -> dict:
+    body = {"from_src": "valorant_web", "size": size}
+    if after:
+        body["after"] = after
+    return await _post("GetBattleList", body)
 
 
 async def get_battle_detail(ap_event_id: str) -> dict:
