@@ -81,14 +81,14 @@ async def _sync(battles: list) -> dict:
 
 
 async def run_incremental_sync() -> dict:
-    """Hourly job: fetch the latest 20 matches, insert only new ones."""
+    """Hourly job: fetch the latest matches, insert only new ones."""
     if not is_valid():
         logger.info("Skipping incremental sync: no valid WeGame session stored.")
         return {"skipped_reason": "no_cookies"}
 
     logger.info("Starting incremental sync...")
     try:
-        resp = await get_battle_list(size=20)
+        resp = await get_battle_list(size=100)
         battles = resp.get("battles", [])
         result = await _sync(battles)
         logger.info("Incremental sync done: %s", result)
