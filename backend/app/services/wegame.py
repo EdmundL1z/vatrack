@@ -2,6 +2,14 @@ import httpx
 from app.services.cookie_store import load_cookies, mark_invalid
 
 WEGAME_BASE = "https://www.wegame.com.cn/api/v1/wegame.pallas.game.ValBattle/"
+LOGIN_EXPIRED_CODE = 8025004
+
+
+class WeGameAPIError(RuntimeError):
+    def __init__(self, code: int, message: str):
+        self.code = code
+        self.message = message
+        super().__init__(f"WeGame API error {code}: {message}")
 
 # Mimic a real Edge browser request; WeGame may reject non-browser User-Agents or
 # requests missing sec-fetch-* headers.
@@ -35,9 +43,20 @@ async def _post(endpoint: str, body: dict) -> dict:
         resp.raise_for_status()
     resp.raise_for_status()
     data = resp.json()
-    # WeGame returns code != 0 for auth/logic errors even on HTTP 200
-    if data.get("code") not in (None, 0):
-        raise ValueError(f"WeGame API error {data['code']}: {data.get('msg', '')}")
+    # WeGame may return business errors inside either top-level code/msg or result.error_code/error_message.
+    top_code = data.get("code")
+    if top_code not in (None, 0):
+        if top_code == LOGIN_EXPIRED_CODE:
+            mark_invalid()
+        raise WeGameAPIError(top_code, data.get("msg", ""))
+
+    result = data.get("result") if isinstance(data.get("result"), dict) else {}
+    result_code = result.get("error_code")
+    if result_code not in (None, 0):
+        if result_code == LOGIN_EXPIRED_CODE:
+            mark_invalid()
+        raise WeGameAPIError(result_code, result.get("error_message", ""))
+
     return data
 
 
