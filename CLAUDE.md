@@ -65,18 +65,27 @@ backend/
     database.py            # SQLite engine + session factory
     routers/
       battles.py           # GET /battles, GET /battles/{id}
-      stats.py             # GET /stats/agents, /stats/maps, etc.
-      sync.py              # GET /battles/ids, POST /sync (receives match data from extension)
+      stats.py             # GET /stats/agents, /stats/maps, /stats/trends, /stats/friends
+      sync.py              # GET /battles/ids, POST /sync; GET /sync/status, POST /sync/trigger, POST /sync/ack-failure
       auth.py              # POST /cookies (receives cookies from CDP script — alternative path)
     services/
-      wegame.py            # WeGame API client (used if server-side pull is ever needed)
-      sync.py              # Scheduled hourly pull logic (TODO — not yet implemented)
-    scheduler.py           # APScheduler hourly job (wired up, sync logic is TODO)
+      wegame.py            # WeGame API client — server-side WeGame calls
+      sync.py              # Hourly sync logic: run_incremental_sync(), run_full_sync()
+      cookie_store.py      # Persist/load WeGame cookies (data/cookies.json + validity status)
+      sync_job_state.py    # Track sync job success/failure state (data/sync_job_state.json)
+    scheduler.py           # APScheduler — runs run_incremental_sync() every hour
+
+data/                      # Runtime data dir (DATA_DIR env var, default ./data, gitignored)
+  cookies.json             # Stored WeGame cookies
+  cookie_status.json       # Cookie validity + expiry timestamp
+  sync_job_state.json      # Last sync result, active failure fingerprint, notified flag
 
 frontend/
   src/
-    pages/                 # BattleList, BattleDetail, AgentStats, MapStats, TrendStats
-    components/            # Sidebar, BattleCard, etc.
+    pages/                 # BattleList, BattleDetail, AgentStats, MapStats, TrendStats, FriendStats
+    components/            # Sidebar
+    hooks/
+      useGameData.ts       # Agent/map/queue name + color lookup helpers
     api/client.ts          # Axios client + typed API functions
 ```
 
@@ -89,10 +98,11 @@ frontend/
 4. Extension POSTs all new matches to `POST /api/sync` with the sync token.
 5. Backend deduplicates by `matchId` and persists to SQLite.
 
-**Alternative (CDP cookie sync + server-side pull — not currently active):**
+**Secondary (CDP cookie sync + server-side hourly pull — active):**
 1. `scripts/sync_cookies.js` reads Chrome cookies via CDP, POSTs to `/api/cookies`.
-2. Stored cookies would allow the backend scheduler to call WeGame API server-side.
-3. This path exists in code (`auth.py`, `services/wegame.py`, `scheduler.py`) but the scheduled pull logic in `services/sync.py` is not yet implemented.
+2. `cookie_store.py` persists cookies; `scheduler.py` runs `run_incremental_sync()` hourly.
+3. Server-side sync uses `size=11` + `after` cursor paging (not size=100); fetches up to 100 new matches, stops when it hits an already-known match.
+4. Monitor via `GET /api/sync/status`; manually trigger via `POST /api/sync/trigger?full=true`.
 
 ### WeGame API
 
@@ -102,7 +112,7 @@ All endpoints are **HTTP POST with JSON body**. The extension calls them from th
 
 | Endpoint | Key param | Note |
 |----------|-----------|------|
-| `GetBattleList` | `size: N` | Returns last N matches; extension uses size=100 |
+| `GetBattleList` | `size: N`, `after?` | Extension uses size=100; server-side uses size=11 + after cursor |
 | `GetBattleDetail` | `apEventId` | **Use `apEventId`, not `matchId`** |
 | `GetBattleReport` | `sid, queueID` | Season summary |
 | `GetChampion` | — | All-agent historical stats |
