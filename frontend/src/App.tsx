@@ -19,7 +19,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar page={page} onNavigate={setPage} />
-      <main style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
+      <main style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
         {/* Keep BattleList mounted to preserve filter state; hide when not active */}
         <div style={{ display: page === 'list' ? 'block' : 'none' }}>
           <BattleList onSelectMatch={goToDetail} />

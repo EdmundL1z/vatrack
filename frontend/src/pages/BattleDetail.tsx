@@ -49,35 +49,34 @@ function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: cols,
-      padding: '8px 14px', borderBottom: '1px solid var(--border)',
-      background: highlight ? 'rgba(255,70,85,0.06)' : 'transparent',
-      borderLeft: highlight ? '2px solid rgba(255,70,85,0.5)' : '2px solid transparent',
+      padding: '9px 16px', borderBottom: '1px solid var(--border)',
+      background: highlight ? 'rgba(255,70,85,0.07)' : 'transparent',
+      borderLeft: highlight ? '3px solid rgba(255,70,85,0.6)' : '3px solid transparent',
       fontSize: 12, alignItems: 'center', gap: 4,
     }}>
-      <div style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div style={{ color: 'var(--subtext)', fontSize: 10, letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {agentNameFn(p.character_id)}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: highlight ? 600 : 400 }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: highlight ? 700 : 400 }}>
           {name}
         </span>
         {p.is_match_mvp && (
-          <span style={{ color: 'var(--accent)', fontSize: 9, flexShrink: 0, letterSpacing: '0.06em' }}>MVP</span>
+          <span style={{ color: 'var(--accent)', fontSize: 9, flexShrink: 0, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>MVP</span>
         )}
         {p.is_team_mvp && !p.is_match_mvp && (
-          <span style={{ color: 'var(--gold)', fontSize: 9, flexShrink: 0, letterSpacing: '0.06em' }}>SVP</span>
+          <span style={{ color: 'var(--gold)', fontSize: 9, flexShrink: 0, letterSpacing: '0.08em', fontFamily: 'var(--font-mono)' }}>SVP</span>
         )}
         {p.is_friend && (
           <span style={{
             fontSize: 9, flexShrink: 0, color: 'var(--win)',
             border: '1px solid rgba(0,212,160,0.35)', borderRadius: 1,
-            padding: '1px 4px', letterSpacing: '0.04em',
+            padding: '1px 4px', letterSpacing: '0.04em', fontFamily: 'var(--font-mono)',
           }}>友</span>
         )}
       </div>
 
       {tab === '战绩' ? <>
-        {/* KDA first — most-watched stat */}
         <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
           {p.kills}<span style={{ color: 'var(--muted)' }}>/</span>
           <span style={{ color: 'var(--loss)' }}>{p.deaths}</span>
@@ -118,16 +117,17 @@ function TeamSection({ label, color, players, mySubject, tab, agentNameFn }: {
     <div style={{ marginBottom: 12 }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
-        padding: '6px 14px',
+        padding: '7px 16px',
         background: 'var(--surface-hi)',
-        borderLeft: `2px solid ${color}`,
+        borderLeft: `3px solid ${color}`,
       }}>
-        <span style={{ color, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>{label}</span>
+        <span style={{ color, fontSize: 11, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' as const }}>{label}</span>
       </div>
       <div style={{
-        display: 'grid', gridTemplateColumns: cols, padding: '5px 14px',
-        color: 'var(--muted)', fontSize: 10, letterSpacing: '0.06em',
+        display: 'grid', gridTemplateColumns: cols, padding: '5px 16px',
+        color: 'var(--muted)', fontSize: 10, letterSpacing: '0.08em',
         borderBottom: '1px solid var(--border)', gap: 4,
+        background: 'rgba(0,0,0,0.12)',
       }}>
         {headers.map((h, i) => (
           <span key={h} style={{ textAlign: (i === 0 || i === 1) ? 'left' : 'center' }}>{h}</span>
@@ -155,7 +155,7 @@ export default function BattleDetail({ matchId, onBack }: Props) {
     getBattle(matchId).then(r => setMatch(r.data)).catch(() => setError('加载失败')).finally(() => setLoading(false));
   }, [matchId]);
 
-  if (loading) return <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>;
+  if (loading) return <p className="loading-text">LOADING...</p>;
   if (error || !match) return <p style={{ color: 'var(--loss)' }}>{error ?? '加载失败'}</p>;
 
   const isDm = match.queue_id === 'deathmatch';
@@ -178,13 +178,15 @@ export default function BattleDetail({ matchId, onBack }: Props) {
   const enemies = sortByAcs(match.players.filter(p => p.team_id !== myTeamId));
 
   const tabStyle = (t: Tab): CSSProperties => ({
-    padding: '7px 22px', cursor: 'pointer', fontSize: 13, border: 'none',
+    padding: '9px 24px', cursor: 'pointer', border: 'none',
     borderBottom: tab === t ? '2px solid var(--accent)' : '2px solid transparent',
     background: 'transparent',
-    color: tab === t ? 'var(--text)' : 'var(--muted)',
+    color: tab === t ? 'var(--text)' : 'var(--subtext)',
     fontFamily: 'var(--font-ui)',
-    letterSpacing: '0.04em',
-    fontWeight: tab === t ? 600 : 400,
+    letterSpacing: '0.1em',
+    fontWeight: tab === t ? 700 : 500,
+    fontSize: 13,
+    textTransform: 'uppercase' as CSSProperties['textTransform'],
   });
 
   return (
@@ -192,10 +194,13 @@ export default function BattleDetail({ matchId, onBack }: Props) {
       <button
         onClick={onBack}
         style={{
-          background: 'none', border: 'none', color: 'var(--muted)',
-          fontSize: 13, cursor: 'pointer', marginBottom: 16,
-          letterSpacing: '0.06em', padding: 0,
-          fontFamily: 'var(--font-ui)',
+          background: 'none',
+          border: '1px solid var(--border)',
+          color: 'var(--subtext)',
+          fontSize: 11, cursor: 'pointer', marginBottom: 20,
+          letterSpacing: '0.12em', padding: '6px 14px',
+          fontFamily: 'var(--font-mono)',
+          borderRadius: 2,
         }}
       >
         ← 返回
@@ -203,63 +208,87 @@ export default function BattleDetail({ matchId, onBack }: Props) {
 
       <div style={{
         background: 'var(--surface)',
-        borderRadius: 2,
+        borderRadius: 3,
         border: '1px solid var(--border)',
-        borderLeft: `2px solid ${resultColor}`,
-        boxShadow: `inset 4px 0 24px ${resultColor}10`,
-        padding: '16px 20px',
-        marginBottom: 16,
+        borderLeft: `5px solid ${resultColor}`,
+        boxShadow: `inset 8px 0 40px ${resultColor}14`,
+        padding: '20px 24px',
+        marginBottom: 18,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-          <span style={{ color: resultColor, fontSize: 26, fontWeight: 700, letterSpacing: '0.06em', lineHeight: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, marginBottom: 14 }}>
+          <span style={{
+            color: resultColor,
+            fontSize: 52,
+            fontWeight: 700,
+            fontFamily: 'var(--font-ui)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            textShadow: `0 0 40px ${resultColor}55`,
+          }}>
             {isDm ? 'DM' : match.won_match ? '胜' : '负'}
           </span>
           {score && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 500, color: 'var(--text)', letterSpacing: '0.08em' }}>
+            <span style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 28,
+              fontWeight: 500,
+              color: 'var(--text)',
+              letterSpacing: '0.08em',
+              marginBottom: 6,
+            }}>
               {score}
             </span>
           )}
-          <span style={{ color: 'var(--muted)', fontSize: 11, letterSpacing: '0.04em', marginLeft: 4 }}>
-            {mapName(match.map_name)} · {queueName(match.queue_id)}
-            {match.duration_seconds ? ` · ${formatDuration(match.duration_seconds)}` : ''}
-            {match.started_at ? ` · ${formatDateTime(match.started_at)}` : ''}
-          </span>
+          {rrLabel && (
+            <span style={{
+              color: rrColor,
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 22,
+              marginBottom: 6,
+              letterSpacing: '0.04em',
+            }}>
+              {rrLabel}
+            </span>
+          )}
+          {match.is_mvp && <span style={{ color: 'var(--accent)', fontSize: 12, letterSpacing: '0.1em', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>★ MVP</span>}
+          {match.is_svp && !match.is_mvp && <span style={{ color: 'var(--gold)', fontSize: 12, letterSpacing: '0.1em', marginBottom: 8, fontFamily: 'var(--font-mono)' }}>★ SVP</span>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
           <div style={{
-            width: 8, height: 8, borderRadius: 1,
+            width: 6, height: 6, borderRadius: '50%',
             background: agentColor(match.character_id),
-            boxShadow: `0 0 6px ${agentColor(match.character_id)}`,
+            boxShadow: `0 0 8px ${agentColor(match.character_id)}`,
             flexShrink: 0,
           }} />
-          <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: '0.02em' }}>{agentName(match.character_id)}</span>
+          <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: '0.04em' }}>{agentName(match.character_id)}</span>
           {myPlayer && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--subtext)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--subtext)' }}>
               {myPlayer.kills}/{myPlayer.deaths}/{myPlayer.assists}
             </span>
           )}
           {myPlayer?.acs != null && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)', letterSpacing: '0.06em' }}>
               ACS {Math.round(myPlayer.acs)}
             </span>
           )}
-          {rrLabel && (
-            <span style={{ color: rrColor, fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-              {rrLabel}
-            </span>
-          )}
-          {match.is_mvp && <span style={{ color: 'var(--accent)', fontSize: 11, letterSpacing: '0.08em' }}>★ MVP</span>}
-          {match.is_svp && !match.is_mvp && <span style={{ color: 'var(--gold)', fontSize: 11, letterSpacing: '0.08em' }}>★ SVP</span>}
+        </div>
+
+        <div style={{ color: 'var(--subtext)', fontSize: 11, letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
+          {mapName(match.map_name)} · {queueName(match.queue_id)}
+          {match.duration_seconds ? ` · ${formatDuration(match.duration_seconds)}` : ''}
+          {match.started_at ? ` · ${formatDateTime(match.started_at)}` : ''}
         </div>
       </div>
 
-      <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 12 }}>
+      <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 14 }}>
         {(['战绩', '特殊'] as Tab[]).map(t => (
           <button key={t} onClick={() => setTab(t)} style={tabStyle(t)}>{t}</button>
         ))}
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 2, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 3, border: '1px solid var(--border)', overflow: 'hidden' }}>
         {isDm ? (
           <TeamSection label="所有玩家" color="var(--muted)"
             players={sortByAcs(match.players)} mySubject={myPlayer?.subject ?? ''}

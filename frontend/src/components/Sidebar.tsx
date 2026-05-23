@@ -16,32 +16,38 @@ const NAV: { label: string; page: Page }[] = [
 export default function Sidebar({ page, onNavigate }: SidebarProps) {
   return (
     <aside style={{
-      width: 148,
+      width: 168,
       minHeight: '100vh',
       background: 'var(--sidebar)',
       borderRight: '1px solid var(--border)',
-      padding: '24px 0',
+      padding: '28px 0',
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <div style={{ padding: '0 20px 28px' }}>
+      <div style={{ padding: '0 18px 28px' }}>
         <div style={{
           fontFamily: 'var(--font-ui)',
           fontWeight: 700,
-          fontSize: 17,
-          letterSpacing: '0.2em',
-          textShadow: '0 0 18px rgba(255,70,85,0.45)',
+          fontSize: 24,
+          letterSpacing: '0.24em',
+          lineHeight: 1,
+          marginBottom: 8,
         }}>
-          <span style={{ color: 'var(--accent)' }}>VA</span>
+          <span style={{ color: 'var(--accent)', textShadow: '0 0 24px rgba(255,70,85,0.55)' }}>VA</span>
           <span style={{ color: 'var(--text)' }}>TRACK</span>
         </div>
         <div style={{
           height: 1,
-          marginTop: 10,
-          background: 'linear-gradient(90deg, var(--accent) 0%, transparent 80%)',
-          opacity: 0.6,
+          background: 'linear-gradient(90deg, var(--accent) 0%, rgba(255,70,85,0.2) 60%, transparent 100%)',
+          marginBottom: 5,
         }} />
+        <div style={{
+          fontSize: 8,
+          letterSpacing: '0.22em',
+          color: 'var(--muted)',
+          fontFamily: 'var(--font-mono)',
+        }}>STAT TRACKER</div>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 10px' }}>
@@ -51,19 +57,20 @@ export default function Sidebar({ page, onNavigate }: SidebarProps) {
             <button
               key={p}
               onClick={() => onNavigate(p)}
+              className="nav-btn"
               style={{
-                background: active ? 'rgba(255,70,85,0.08)' : 'transparent',
+                background: active ? 'rgba(255,70,85,0.1)' : 'transparent',
                 border: 'none',
-                borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
-                color: active ? 'var(--text)' : 'var(--muted)',
+                borderLeft: active ? '3px solid var(--accent)' : '3px solid transparent',
+                color: active ? 'var(--text)' : 'var(--subtext)',
                 textAlign: 'left',
-                padding: '9px 12px',
-                borderRadius: '0 2px 2px 0',
-                fontSize: 13,
-                fontWeight: active ? 600 : 400,
-                letterSpacing: '0.04em',
+                padding: '10px 14px',
+                borderRadius: '0 3px 3px 0',
+                fontSize: 14,
+                fontWeight: active ? 700 : 500,
+                letterSpacing: '0.06em',
                 cursor: 'pointer',
-                boxShadow: active ? 'inset 4px 0 12px rgba(255,70,85,0.06)' : 'none',
+                boxShadow: active ? 'inset 4px 0 16px rgba(255,70,85,0.08)' : 'none',
               }}
             >
               {label}

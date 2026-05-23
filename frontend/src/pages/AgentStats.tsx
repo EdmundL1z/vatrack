@@ -20,10 +20,10 @@ const COL = '1fr 56px 56px 80px 56px 56px 56px 60px';
 function WinRateCell({ value }: { value: number }) {
   const color = value >= 50 ? 'var(--win)' : 'var(--loss)';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color }}>{value}%</span>
-      <div style={{ width: '80%', height: 2, background: 'var(--border)', borderRadius: 1 }}>
-        <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 1 }} />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color }}>{value}%</span>
+      <div style={{ width: '85%', height: 3, background: 'var(--border)', borderRadius: 2 }}>
+        <div style={{ height: '100%', width: `${value}%`, background: color, borderRadius: 2 }} />
       </div>
     </div>
   );
@@ -62,20 +62,23 @@ export default function AgentStats() {
     return sortDir === 'asc' ? v : -v;
   });
 
-  if (loading) return <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>;
+  if (loading) return <p className="loading-text">LOADING...</p>;
   if (error)   return <p style={{ color: 'var(--loss)' }}>{error}</p>;
   if (stats.length === 0) return <p style={{ color: 'var(--muted)' }}>暂无竞技数据</p>;
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.08em' }}>英雄统计</h2>
-        <span style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.1em' }}>仅竞技模式</span>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '0.12em', lineHeight: 1, marginBottom: 6 }}>英雄统计</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 20, height: 2, background: 'var(--accent)' }} />
+          <span style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.14em', fontFamily: 'var(--font-mono)' }}>仅竞技模式</span>
+        </div>
       </div>
       <div style={{ background: 'var(--surface)', borderRadius: 2, overflow: 'hidden', border: '1px solid var(--border)' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: COL,
-          padding: '7px 14px',
+          padding: '7px 16px',
           background: 'var(--surface-hi)',
           borderBottom: '1px solid var(--border)',
         }}>
@@ -102,14 +105,14 @@ export default function AgentStats() {
               className="stat-row"
               style={{
                 display: 'grid', gridTemplateColumns: COL,
-                padding: '9px 14px',
+                padding: '11px 16px',
                 borderBottom: '1px solid var(--border)',
-                borderLeft: `2px solid ${color}`,
-                boxShadow: `inset 3px 0 18px ${color}18`,
+                borderLeft: `4px solid ${color}`,
+                boxShadow: `inset 5px 0 24px ${color}18`,
                 alignItems: 'center',
               }}
             >
-              <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.02em' }}>{agentName(s.character_id)}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: '0.04em' }}>{agentName(s.character_id)}</span>
               <MonoCell value={s.played} />
               <MonoCell value={s.wins} />
               <WinRateCell value={s.win_rate} />

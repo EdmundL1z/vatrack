@@ -42,7 +42,7 @@ export default function FriendStats() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>;
+  if (loading) return <p className="loading-text">LOADING...</p>;
   if (error)   return <p style={{ color: 'var(--loss)' }}>{error}</p>;
 
   const filtered = search
@@ -51,9 +51,12 @@ export default function FriendStats() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.08em' }}>好友统计</h2>
-        <span style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.1em' }}>同队竞技对局</span>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '0.12em', lineHeight: 1, marginBottom: 6 }}>好友统计</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 20, height: 2, background: 'var(--accent)' }} />
+          <span style={{ color: 'var(--muted)', fontSize: 10, letterSpacing: '0.14em', fontFamily: 'var(--font-mono)' }}>同队竞技对局</span>
+        </div>
       </div>
 
       <div style={{ marginBottom: 16 }}>

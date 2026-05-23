@@ -122,7 +122,7 @@ export default function TrendStats() {
       .finally(() => setLoading(false));
   }, [days]);
 
-  if (loading) return <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>;
+  if (loading) return <p className="loading-text">LOADING...</p>;
   if (error)   return <p style={{ color: 'var(--loss)' }}>{error}</p>;
   if (allMatches.length === 0) return <p style={{ color: 'var(--muted)' }}>暂无竞技数据</p>;
 
@@ -135,7 +135,7 @@ export default function TrendStats() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '0.08em' }}>趋势统计</h2>
+        <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '0.12em' }}>趋势统计</h2>
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           {([7, 30, 0] as DayRange[]).map(d => (
             <button key={d} onClick={() => setDays(d)} style={btnStyle(days === d)}>
@@ -215,10 +215,11 @@ export default function TrendStats() {
               key={m.match_id}
               data-tip={`${mapName(m.map_name)} ${m.kills}/${m.deaths}/${m.assists}`}
               style={{
-                width: 14, height: 14, borderRadius: 1,
+                width: 18, height: 18, borderRadius: 2,
                 background: m.won_match ? '#00d4a0' : '#ff4655',
-                opacity: 0.8,
+                opacity: 0.85,
                 cursor: 'default',
+                boxShadow: m.won_match ? '0 0 5px rgba(0,212,160,0.3)' : '0 0 5px rgba(255,70,85,0.3)',
               }}
             />
           ))}

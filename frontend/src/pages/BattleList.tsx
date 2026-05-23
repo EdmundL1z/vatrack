@@ -26,24 +26,27 @@ const selectStyle: React.CSSProperties = {
   color: 'var(--text)',
   border: '1px solid var(--border)',
   borderRadius: 2,
-  padding: '5px 10px',
+  padding: '6px 12px',
   fontSize: 13,
+  fontWeight: 600,
   cursor: 'pointer',
   fontFamily: 'var(--font-ui)',
   outline: 'none',
-  letterSpacing: '0.03em',
+  letterSpacing: '0.06em',
 };
 
 const pageBtn = (active: boolean, disabled = false): React.CSSProperties => ({
   background: active ? 'var(--accent)' : 'var(--surface)',
   border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
-  color: disabled ? 'var(--muted)' : 'var(--text)',
+  color: disabled ? 'var(--muted)' : active ? '#fff' : 'var(--text)',
   borderRadius: 2,
-  padding: '4px 11px',
+  padding: '5px 12px',
   cursor: disabled ? 'default' : 'pointer',
   fontFamily: 'var(--font-mono)',
   fontSize: 12,
-  boxShadow: active ? '0 0 8px rgba(255,70,85,0.28)' : 'none',
+  fontWeight: active ? 700 : 400,
+  boxShadow: active ? '0 0 12px rgba(255,70,85,0.35)' : 'none',
+  letterSpacing: '0.04em',
 });
 
 export default function BattleList({ onSelectMatch }: Props) {
@@ -86,7 +89,7 @@ export default function BattleList({ onSelectMatch }: Props) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={queue} onChange={handleFilterChange(setQueue)} style={selectStyle}>
           <option value="">全部模式</option>
           {filters.queues.map(q => <option key={q} value={q}>{queueName(q)}</option>)}
@@ -99,19 +102,19 @@ export default function BattleList({ onSelectMatch }: Props) {
           <option value="">全部英雄</option>
           {filters.character_ids.map(id => <option key={id} value={id}>{agentName(id)}</option>)}
         </select>
-        <span style={{ color: 'var(--muted)', fontSize: 11, marginLeft: 'auto', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
+        <span style={{ color: 'var(--subtext)', fontSize: 11, marginLeft: 'auto', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', fontWeight: 500 }}>
           {total} MATCHES
         </span>
       </div>
 
-      {loading && <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>LOADING...</p>}
+      {loading && <p className="loading-text">LOADING...</p>}
       {error   && <p style={{ color: 'var(--loss)' }}>{error}</p>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {matches.map(m => {
           const isDm = m.queue_id === 'deathmatch';
           const resultColor = isDm ? '#3a5068' : m.won_match ? '#00d4a0' : '#ff4655';
-          const glowColor = isDm ? 'rgba(58,80,104,0.12)' : m.won_match ? 'rgba(0,212,160,0.08)' : 'rgba(255,70,85,0.08)';
+          const glowColor = isDm ? 'rgba(58,80,104,0.14)' : m.won_match ? 'rgba(0,212,160,0.1)' : 'rgba(255,70,85,0.1)';
           const rrLabel = m.rr_change != null
             ? (m.rr_change >= 0 ? `+${m.rr_change}` : `${m.rr_change}`)
             : null;
@@ -124,37 +127,35 @@ export default function BattleList({ onSelectMatch }: Props) {
               onClick={() => onSelectMatch(m.match_id)}
               style={{
                 background: 'var(--surface)',
-                borderLeft: `2px solid ${resultColor}`,
-                boxShadow: `inset 4px 0 20px ${glowColor}`,
+                borderLeft: `5px solid ${resultColor}`,
+                boxShadow: `inset 6px 0 28px ${glowColor}`,
                 borderRadius: 2,
-                padding: '10px 16px',
+                padding: '11px 16px 11px 14px',
                 display: 'grid',
-                gridTemplateColumns: '10px 108px 90px 68px 52px 86px 56px 72px',
+                gridTemplateColumns: '120px 88px 54px 44px 86px 54px 64px',
                 alignItems: 'center',
                 gap: 10,
                 cursor: 'pointer',
               }}
             >
               <div style={{
-                width: 10, height: 10, borderRadius: 1,
-                background: color,
-                boxShadow: `0 0 6px ${color}99`,
-                flexShrink: 0,
-              }} />
-              <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                fontSize: 14, fontWeight: 700, letterSpacing: '0.04em',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                color: color,
+              }}>
                 {agentName(m.character_id)}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--subtext)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: 13, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {mapName(m.map_name)}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: 11, color: 'var(--subtext)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {queueName(m.queue_id)}
               </div>
-              <div style={{ color: resultColor, fontSize: 13, fontWeight: 700, letterSpacing: '0.08em' }}>
+              <div style={{ color: resultColor, fontSize: 14, fontWeight: 700, letterSpacing: '0.08em', textAlign: 'center' }}>
                 {isDm ? 'DM' : m.won_match ? '胜' : '负'}
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                <span style={{ color: 'var(--text)' }}>{m.kills}</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+                <span style={{ color: 'var(--text)', fontWeight: 500 }}>{m.kills}</span>
                 <span style={{ color: 'var(--muted)' }}>/</span>
                 <span style={{ color: 'var(--loss)' }}>{m.deaths}</span>
                 <span style={{ color: 'var(--muted)' }}>/</span>
@@ -162,14 +163,14 @@ export default function BattleList({ onSelectMatch }: Props) {
               </div>
               <div style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: 12,
-                fontWeight: 500,
+                fontSize: 13,
+                fontWeight: 600,
                 textAlign: 'right',
                 color: !rrLabel ? 'var(--muted)' : (m.rr_change ?? -1) >= 0 ? 'var(--win)' : 'var(--loss)',
               }}>
                 {rrLabel ?? '—'}
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', textAlign: 'right' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--subtext)', textAlign: 'right' }}>
                 {relativeTime(m.started_at)}
               </div>
             </div>
@@ -178,7 +179,7 @@ export default function BattleList({ onSelectMatch }: Props) {
       </div>
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 20, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 24, alignItems: 'center' }}>
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={pageBtn(false, page === 1)}>←</button>
           {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
             const p = page <= 4 ? i + 1 : page + i - 3;
