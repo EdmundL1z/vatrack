@@ -1,6 +1,8 @@
 import json
 import time
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import Integer, cast, func
 from sqlalchemy.orm import Session
@@ -169,7 +171,7 @@ def friend_stats(subject: str | None = Query(None), db: Session = Depends(get_db
 
 @router.get("/stats/custom")
 def custom_stats(
-    group_by: str = Query("map"),
+    group_by: Literal["map", "agent", "friend", "none"] = Query("map"),
     queue: str = Query("competitive"),
     map_ids: str | None = Query(None),
     character_ids: str | None = Query(None),
@@ -194,16 +196,41 @@ def custom_stats(
         q = q.filter(Match.started_at >= cutoff)
 
     if friend_subject:
-        candidate_ids = {row.match_id for row in q.with_entities(Match.match_id).all()}
-        details = db.query(MatchDetail).filter(MatchDetail.match_id.in_(candidate_ids)).all()
-        valid_ids = set()
-        for detail in details:
-            raw = json.loads(detail.raw_json)
-            for p in raw.get("battle_detail", {}).get("players", []):
-                if p.get("subject") == friend_subject and p.get("isFriend"):
-                    valid_ids.add(detail.match_id)
-                    break
-        q = q.filter(Match.match_id.in_(valid_ids))
+        candidate_matches = {m.match_id: m for m in q.all()}
+        if candidate_matches:
+            details = db.query(MatchDetail).filter(
+                MatchDetail.match_id.in_(candidate_matches.keys())
+            ).all()
+            valid_ids = set()
+            for detail in details:
+                match = candidate_matches.get(detail.match_id)
+                if not match or not match.character_id:
+                    continue
+                raw = json.loads(detail.raw_json)
+                players = raw.get("battle_detail", {}).get("players", [])
+                if not players:
+                    continue
+                candidates = [p for p in players if p.get("characterId") == match.character_id]
+                if not candidates:
+                    continue
+                my_player = (
+                    candidates[0] if len(candidates) == 1
+                    else next(
+                        (p for p in candidates
+                         if p.get("statsKills") == match.kills and p.get("statsDeaths") == match.deaths),
+                        candidates[0],
+                    )
+                )
+                my_team = my_player.get("teamId")
+                for p in players:
+                    if (p.get("subject") == friend_subject
+                            and p.get("isFriend")
+                            and p.get("teamId") == my_team):
+                        valid_ids.add(detail.match_id)
+                        break
+            q = q.filter(Match.match_id.in_(valid_ids))
+        else:
+            q = q.filter(Match.match_id.in_([]))
 
     if group_by == "map":
         rows = (
