@@ -6,8 +6,9 @@ import AgentStats from './pages/AgentStats';
 import MapStats from './pages/MapStats';
 import TrendStats from './pages/TrendStats';
 import FriendStats from './pages/FriendStats';
+import CustomStats from './pages/CustomStats';
 
-type Page = 'list' | 'detail' | 'agents' | 'maps' | 'trends' | 'friends';
+type Page = 'list' | 'detail' | 'agents' | 'maps' | 'trends' | 'friends' | 'custom';
 
 export default function App() {
   const [page, setPage] = useState<Page>('list');
@@ -29,6 +30,7 @@ export default function App() {
         {page === 'maps'    && <MapStats />}
         {page === 'trends'  && <TrendStats />}
         {page === 'friends' && <FriendStats />}
+        {page === 'custom' && <CustomStats />}
       </main>
     </div>
   );
