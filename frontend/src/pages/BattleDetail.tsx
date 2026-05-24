@@ -36,9 +36,9 @@ function StatCell({ value }: { value: string | number | null | undefined }) {
   );
 }
 
-const COL_PERF    = '38px 160px 92px 60px 50px 72px 52px';
+const COL_PERF    = '38px 160px 92px 60px 50px 72px';
 const COL_SPECIAL = '38px 160px 40px 40px 40px 40px 52px 40px 40px 56px';
-const PERF_HEADERS    = ['英雄', '玩家', 'K/D/A', 'ACS', 'HS%', '伤害', 'KAST%'];
+const PERF_HEADERS    = ['英雄', '玩家', 'K/D/A', 'ACS', 'HS%', '伤害'];
 const SPECIAL_HEADERS = ['英雄', '玩家', '首杀', '三杀', '四杀', '五杀', 'Clutch', '种弹', '拆弹', '经济分'];
 
 function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
@@ -85,7 +85,6 @@ function PlayerRow({ p, highlight, tab, cols, agentNameFn }: {
         <StatCell value={p.acs != null ? Math.round(p.acs) : null} />
         <StatCell value={p.hs_pct != null ? `${p.hs_pct}%` : null} />
         <StatCell value={p.total_damage > 0 ? p.total_damage.toLocaleString() : null} />
-        <StatCell value={p.kast != null ? `${Math.round(p.kast * 100)}%` : null} />
       </> : <>
         <StatCell value={p.first_kills} />
         <div style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: multiKillColor(p.triple_kills) ?? 'var(--muted)' }}>

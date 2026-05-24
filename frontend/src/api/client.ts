@@ -43,7 +43,6 @@ export interface Player {
   legshots: number;
   hs_pct: number | null;
   total_damage: number;
-  kast: number | null;
   economy_score: number | null;
   first_kills: number | null;
   triple_kills: number | null;
