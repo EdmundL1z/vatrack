@@ -131,7 +131,7 @@ def get_battle(match_id: str, db: Session = Depends(get_db)):
                 "legshots": p.get("totalLegshots"),
                 "hs_pct": hs_pct,
                 "total_damage": p.get("totalDamage"),
-                "kast": p.get("kast"),
+                "kast": p.get("kast") or None,  # WeGame returns 0 for all players; treat as unavailable
                 "economy_score": p.get("economyScore"),
                 "first_kills": p.get("firstKillCount"),
                 "triple_kills": p.get("tripleKillCount"),
