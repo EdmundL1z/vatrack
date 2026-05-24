@@ -141,3 +141,58 @@ export interface FriendStat {
 
 export const getFriendStats = (subject?: string) =>
   client.get<FriendStat[]>('/stats/friends', subject ? { params: { subject } } : {});
+
+export type CustomGroupBy = 'map' | 'agent' | 'friend' | 'none';
+
+export interface CustomStatsParams {
+  group_by: CustomGroupBy;
+  queue?: string;
+  map_ids?: string;
+  character_ids?: string;
+  friend_subject?: string;
+  days?: number;
+}
+
+export interface CustomMapRow {
+  map_id: string;
+  map_name: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+}
+
+export interface CustomAgentRow {
+  character_id: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+}
+
+export interface CustomFriendRow {
+  subject: string;
+  name: string;
+  played: number;
+  wins: number;
+  win_rate: number;
+}
+
+export interface CustomSummary {
+  played: number;
+  wins: number;
+  win_rate: number;
+  avg_kills: number;
+  avg_deaths: number;
+  avg_assists: number;
+}
+
+export const getCustomStats = (params: CustomStatsParams) =>
+  client.get<CustomMapRow[] | CustomAgentRow[] | CustomFriendRow[] | CustomSummary>(
+    '/stats/custom',
+    { params },
+  );
