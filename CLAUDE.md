@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 语言
+始终用中文回复。
+
 ## Project Overview
 
 Personal Valorant match tracking dashboard for WeGame CN users. Deployed on a Hong Kong Linux server. Supports a small friend group (~5 users). Full design spec is in `valorant_tracker_tech_doc.md`.
