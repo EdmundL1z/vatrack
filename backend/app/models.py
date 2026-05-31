@@ -25,6 +25,7 @@ class Match(Base):
     rr_change = Column(Integer, nullable=True)
     tier_before = Column(Integer, nullable=True)
     tier_after = Column(Integer, nullable=True)
+    rr_after = Column(Integer, nullable=True)   # absolute RR within tier after match (0-99)
 
 
 class MatchDetail(Base):

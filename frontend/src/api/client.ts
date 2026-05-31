@@ -120,6 +120,7 @@ export interface TrendMatch {
   assists: number;
   rr_change: number | null;
   tier_after: number | null;
+  rr_after: number | null;
 }
 
 export const getAgentStats = () =>

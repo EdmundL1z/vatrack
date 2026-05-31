@@ -37,14 +37,25 @@ interface RRPoint { date: string; absRR: number; rrChange: number; }
 function buildRRData(matches: TrendMatch[]): RRPoint[] {
   const competitive = matches.filter(m => m.rr_change !== null && m.tier_after !== null);
   if (competitive.length === 0) return [];
+
+  // If rr_after is available for ALL matches, use it directly — no anchor needed.
+  const hasRRAfter = competitive.every(m => m.rr_after !== null);
+  if (hasRRAfter) {
+    return competitive.map(m => ({
+      date: formatDate(m.started_at),
+      absRR: m.tier_after! * 100 + m.rr_after!,
+      rrChange: m.rr_change!,
+    }));
+  }
+
+  // Fallback: walk backward from anchor using tier_after for tier label correctness.
   const points: RRPoint[] = new Array(competitive.length);
-  // Walk backward from anchor, but use tier_after for the tier component so tier
-  // labels are correct even across promotion/demotion boundaries.
   let withinTierRR = RR_ANCHOR.rr;
   for (let i = competitive.length - 1; i >= 0; i--) {
     const m = competitive[i];
     const tier = m.tier_after!;
-    const rr = Math.max(0, Math.min(99, withinTierRR));
+    // Use rr_after if available for this specific match, otherwise estimate.
+    const rr = m.rr_after !== null ? m.rr_after : Math.max(0, Math.min(99, withinTierRR));
     points[i] = { date: formatDate(m.started_at), absRR: tier * 100 + rr, rrChange: m.rr_change! };
     withinTierRR -= m.rr_change!;
   }

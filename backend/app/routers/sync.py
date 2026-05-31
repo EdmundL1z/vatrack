@@ -133,4 +133,10 @@ def _parse_match(item: MatchPayload) -> Match:
         rr_change=_int(d.get("CompetitiveTierRankedRatingEarned")),
         tier_before=_int(d.get("CompetitiveTierBefore")),
         tier_after=_int(d.get("CompetitiveTierAfter")),
+        rr_after=_int(
+            d.get("CompetitiveTierRankedRatingAfterUpdate")
+            or d.get("rankedRatingAfterUpdate")
+            or d.get("CompetitiveTierRankedRatingAfter")
+            or d.get("rankedRatingAfter")
+        ),
     )
