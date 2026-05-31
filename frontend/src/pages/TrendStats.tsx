@@ -38,11 +38,15 @@ function buildRRData(matches: TrendMatch[]): RRPoint[] {
   const competitive = matches.filter(m => m.rr_change !== null && m.tier_after !== null);
   if (competitive.length === 0) return [];
   const points: RRPoint[] = new Array(competitive.length);
-  let currentAbsRR = RR_ANCHOR.tier * 100 + RR_ANCHOR.rr;
+  // Walk backward from anchor, but use tier_after for the tier component so tier
+  // labels are correct even across promotion/demotion boundaries.
+  let withinTierRR = RR_ANCHOR.rr;
   for (let i = competitive.length - 1; i >= 0; i--) {
     const m = competitive[i];
-    points[i] = { date: formatDate(m.started_at), absRR: currentAbsRR, rrChange: m.rr_change! };
-    currentAbsRR = currentAbsRR - m.rr_change!;
+    const tier = m.tier_after!;
+    const rr = Math.max(0, Math.min(99, withinTierRR));
+    points[i] = { date: formatDate(m.started_at), absRR: tier * 100 + rr, rrChange: m.rr_change! };
+    withinTierRR -= m.rr_change!;
   }
   return points;
 }

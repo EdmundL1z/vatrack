@@ -60,6 +60,17 @@ async def trigger_sync(full: bool = False):
     return result
 
 
+@router.get("/debug/battle-fields")
+async def debug_battle_fields():
+    """Return all raw fields from the first battle in GetBattleList — use to inspect available API fields."""
+    from app.services.wegame import get_battle_list
+    resp = await get_battle_list(size=2)
+    battles = resp.get("battles", [])
+    if not battles:
+        return {"error": "no battles returned"}
+    return {"fields": battles[0]}
+
+
 @router.get("/battles/ids")
 def get_battle_ids(db: Session = Depends(get_db)):
     return [row[0] for row in db.query(Match.match_id).all()]

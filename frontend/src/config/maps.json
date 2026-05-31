@@ -34,5 +34,20 @@
   },
   "Haven": {
     "name_cn": "隐世修所"
+  },
+  "Infinity": {
+    "name_cn": "幽邃地窟"
+  },
+  "Rook": {
+    "name_cn": "盐海矿镇"
+  },
+  "Skirmish_A": {
+    "name_cn": "斗牛-A"
+  },
+  "Skirmish_B": {
+    "name_cn": "斗牛-B"
+  },
+  "Skirmish_C": {
+    "name_cn": "斗牛-C"
   }
 }
