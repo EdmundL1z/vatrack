@@ -62,13 +62,46 @@ async def trigger_sync(full: bool = False):
 
 @router.get("/debug/battle-fields")
 async def debug_battle_fields():
-    """Return all raw fields from the first battle in GetBattleList — use to inspect available API fields."""
-    from app.services.wegame import get_battle_list
-    resp = await get_battle_list(size=2)
-    battles = resp.get("battles", [])
-    if not battles:
-        return {"error": "no battles returned"}
-    return {"fields": battles[0]}
+    """Dump raw API fields from GetBattleList + GetRoleInfo to find rr_after field names."""
+    from app.services.wegame import get_battle_list, get_role_info
+
+    result: dict = {}
+
+    # 1. GetBattleList — look for RankedRating* fields
+    try:
+        resp = await get_battle_list(size=2)
+        battles = resp.get("battles", [])
+        if battles:
+            result["battle_fields"] = battles[0]
+            # Highlight any field that looks like it might be RR-related
+            rr_keys = [k for k in battles[0] if "rating" in k.lower() or "ranked" in k.lower() or "rr" in k.lower()]
+            result["rr_candidate_keys"] = rr_keys
+        else:
+            result["battle_fields"] = "no battles returned"
+    except Exception as e:
+        result["battle_fields"] = f"ERROR: {e}"
+
+    # 2. GetRoleInfo — look for current tier + rankedRating
+    try:
+        role = await get_role_info()
+        result["role_info"] = role
+        # Highlight any RR-related keys recursively (top-level only for readability)
+        def find_rr_keys(obj, path=""):
+            keys = []
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    p = f"{path}.{k}" if path else k
+                    if any(x in k.lower() for x in ("rating", "ranked", "tier", " rr")):
+                        keys.append(f"{p} = {v!r}")
+                    keys.extend(find_rr_keys(v, p))
+            elif isinstance(obj, list) and obj:
+                keys.extend(find_rr_keys(obj[0], f"{path}[0]"))
+            return keys
+        result["role_rr_candidate_fields"] = find_rr_keys(role)
+    except Exception as e:
+        result["role_info"] = f"ERROR: {e}"
+
+    return result
 
 
 @router.get("/battles/ids")
