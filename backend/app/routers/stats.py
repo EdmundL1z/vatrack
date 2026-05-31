@@ -99,7 +99,6 @@ def trend_stats(days: int = Query(30, ge=1, le=36500), db: Session = Depends(get
             "assists": m.assists,
             "rr_change": m.rr_change,
             "tier_after": m.tier_after,
-            "rr_after": m.rr_after,
         }
         for m in rows
     ]

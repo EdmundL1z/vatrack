@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
-  ResponsiveContainer,
+  LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, Legend,
+  ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import { getTrendStats } from '../api/client';
 import type { TrendMatch } from '../api/client';
 import { useGameData } from '../hooks/useGameData';
-
-const RR_ANCHOR = { tier: 16, rr: 6 };
 
 const TIER_NAMES: Record<number, string> = {
   0: '无级',
@@ -32,34 +30,29 @@ function formatDate(ts: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-interface RRPoint { date: string; absRR: number; rrChange: number; }
+// 段位阶梯点：仅竞技模式，tier_after 直接来自 API，100% 准确
+interface TierPoint { date: string; tier: number; rrChange: number; }
 
-function buildRRData(matches: TrendMatch[]): RRPoint[] {
-  const competitive = matches.filter(m => m.rr_change !== null && m.tier_after !== null);
-  if (competitive.length === 0) return [];
-
-  // If rr_after is available for ALL matches, use it directly — no anchor needed.
-  const hasRRAfter = competitive.every(m => m.rr_after !== null);
-  if (hasRRAfter) {
-    return competitive.map(m => ({
+function buildTierData(matches: TrendMatch[]): TierPoint[] {
+  return matches
+    .filter(m => m.rr_change !== null && m.tier_after !== null)
+    .map(m => ({
       date: formatDate(m.started_at),
-      absRR: m.tier_after! * 100 + m.rr_after!,
+      tier: m.tier_after!,
       rrChange: m.rr_change!,
     }));
-  }
+}
 
-  // Fallback: walk backward from anchor using tier_after for tier label correctness.
-  const points: RRPoint[] = new Array(competitive.length);
-  let withinTierRR = RR_ANCHOR.rr;
-  for (let i = competitive.length - 1; i >= 0; i--) {
-    const m = competitive[i];
-    const tier = m.tier_after!;
-    // Use rr_after if available for this specific match, otherwise estimate.
-    const rr = m.rr_after !== null ? m.rr_after : Math.max(0, Math.min(99, withinTierRR));
-    points[i] = { date: formatDate(m.started_at), absRR: tier * 100 + rr, rrChange: m.rr_change! };
-    withinTierRR -= m.rr_change!;
-  }
-  return points;
+// RR 涨跌点：仅竞技模式，rr_change 直接来自 API，100% 准确
+interface RRChangePoint { date: string; rrChange: number; }
+
+function buildRRChangeData(matches: TrendMatch[]): RRChangePoint[] {
+  return matches
+    .filter(m => m.rr_change !== null)
+    .map(m => ({
+      date: formatDate(m.started_at),
+      rrChange: m.rr_change!,
+    }));
 }
 
 interface KDAPoint { date: string; kills: number; deaths: number; assists: number; }
@@ -139,11 +132,12 @@ export default function TrendStats() {
 
   if (loading) return <p className="loading-text">LOADING...</p>;
   if (error)   return <p style={{ color: 'var(--loss)' }}>{error}</p>;
-  if (allMatches.length === 0) return <p style={{ color: 'var(--muted)' }}>暂无竞技数据</p>;
+  if (allMatches.length === 0) return <p style={{ color: 'var(--muted)' }}>暂无数据</p>;
 
-  const rrData    = buildRRData(allMatches);
-  const kdaData   = buildKDAData(allMatches);
-  const agentData = buildAgentData(allMatches, agentName);
+  const tierData     = buildTierData(allMatches);
+  const rrChangeData = buildRRChangeData(allMatches);
+  const kdaData      = buildKDAData(allMatches);
+  const agentData    = buildAgentData(allMatches, agentName);
 
   const axisTick = { fill: '#3a5068', fontSize: 10, fontFamily: 'IBM Plex Mono, monospace' };
 
@@ -160,30 +154,47 @@ export default function TrendStats() {
         </div>
       </div>
 
+      {/* 段位走势：阶梯线，显示升降段节点 */}
       <div style={chartCard}>
         <div style={sectionLabel}>段位走势</div>
-        {rrData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={rrData}>
+        {tierData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={tierData}>
               <XAxis dataKey="date" tick={axisTick} />
               <YAxis
                 tick={axisTick}
-                tickFormatter={(v: number) => TIER_NAMES[Math.floor(v / 100)] ?? `${v}`}
+                tickFormatter={(v: number) => TIER_NAMES[v] ?? `${v}`}
                 width={52}
+                domain={['dataMin - 1', 'dataMax + 1']}
               />
               <Tooltip
                 contentStyle={chartTooltip}
                 wrapperStyle={{ transform: 'translateY(-110%)' }}
-                formatter={(value) => {
-                  if (typeof value !== 'number') return ['—', '段位'] as [string, string];
-                  const tier = TIER_NAMES[Math.floor(value / 100)] ?? '';
-                  const rr = value % 100;
-                  return [`${tier} ${rr}分`, '段位'] as [string, string];
+                formatter={(value: unknown, name: string) => {
+                  if (name === 'tier' && typeof value === 'number') {
+                    return [TIER_NAMES[value] ?? `${value}`, '段位'] as [string, string];
+                  }
+                  return [`${value}`, name] as [string, string];
                 }}
               />
               <Line
-                type="monotone" dataKey="absRR" stroke="#ff4655"
-                dot={{ r: 3, fill: '#ff4655' }} strokeWidth={2} isAnimationActive={false}
+                type="stepAfter"
+                dataKey="tier"
+                stroke="#ff4655"
+                dot={(props) => {
+                  const { cx, cy, index, payload } = props;
+                  if (index === 0) return <circle key={`dot-${index}`} cx={cx} cy={cy} r={3} fill="#ff4655" />;
+                  const prev = tierData[index - 1];
+                  if (prev && prev.tier !== payload.tier) {
+                    // 升降段：高亮圆点
+                    const color = payload.tier > prev.tier ? '#00d4a0' : '#ff4655';
+                    return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill={color} stroke="#0c1520" strokeWidth={1.5} />;
+                  }
+                  return <circle key={`dot-${index}`} cx={cx} cy={cy} r={2} fill="#ff4655" opacity={0.5} />;
+                }}
+                strokeWidth={2}
+                isAnimationActive={false}
+                name="tier"
               />
             </LineChart>
           </ResponsiveContainer>
@@ -192,6 +203,40 @@ export default function TrendStats() {
         )}
       </div>
 
+      {/* 每场 RR 涨跌：正值绿柱，负值红柱 */}
+      <div style={chartCard}>
+        <div style={sectionLabel}>RR 涨跌（每场）</div>
+        {rrChangeData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={rrChangeData} barCategoryGap="30%">
+              <XAxis dataKey="date" tick={axisTick} />
+              <YAxis tick={axisTick} />
+              <ReferenceLine y={0} stroke="#192840" strokeWidth={1} />
+              <Tooltip
+                contentStyle={chartTooltip}
+                wrapperStyle={{ transform: 'translateY(-110%)' }}
+                formatter={(value: unknown) => {
+                  if (typeof value !== 'number') return ['—', 'RR'];
+                  return [`${value > 0 ? '+' : ''}${value}`, 'RR'] as [string, string];
+                }}
+              />
+              <Bar dataKey="rrChange" isAnimationActive={false} name="RR">
+                {rrChangeData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.rrChange >= 0 ? '#00d4a0' : '#ff4655'}
+                    fillOpacity={0.85}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <p style={{ color: 'var(--muted)', fontSize: 12, paddingLeft: 8 }}>无竞技数据</p>
+        )}
+      </div>
+
+      {/* KDA 趋势 */}
       <div style={chartCard}>
         <div style={sectionLabel}>KDA 趋势</div>
         <ResponsiveContainer width="100%" height={180}>
@@ -207,6 +252,7 @@ export default function TrendStats() {
         </ResponsiveContainer>
       </div>
 
+      {/* 英雄使用分布 */}
       {agentData.length > 0 && (
         <div style={chartCard}>
           <div style={sectionLabel}>英雄使用分布</div>
@@ -222,6 +268,7 @@ export default function TrendStats() {
         </div>
       )}
 
+      {/* 胜负连续 */}
       <div style={chartCard}>
         <div style={sectionLabel}>胜负连续（旧→新）</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, padding: '0 8px' }}>
